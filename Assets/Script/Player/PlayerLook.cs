@@ -5,9 +5,9 @@ using UnityEngine.Windows;
 
 public class PlayerLook : MonoBehaviour
 {
-    [SerializeField] private Transform camFollowPos;
-    [SerializeField] private float mouseSensitivity = 1f;
-
+    [SerializeField] private Transform camFollowPos;//follow object camera
+    [SerializeField] private float mouseSensitivity = 1f;//do nhay
+    //lay do xoay theo cach use player input
     private float xRotation;
     private float yRotation;
     private PlayerInput playerInput;
@@ -19,14 +19,14 @@ public class PlayerLook : MonoBehaviour
         playerInput = GetComponent<PlayerInput>();
         if (playerInput != null)
         {
-            lookAction = playerInput.actions["Look"];
-            lookAction?.Enable();
+            lookAction = playerInput.actions["Look"];//call action look da set trong player input component
+            lookAction?.Enable();//kich hoat action
         }
 
         // Lock cursor
-        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.lockState = CursorLockMode.Locked;//shiftlock
     }
-
+    //ham thoat shiftlock
     private void OnDisable()
     {
         lookAction?.Disable();
@@ -39,13 +39,13 @@ public class PlayerLook : MonoBehaviour
         if (lookAction != null)
         {
             // Get input from new Input System
-            Vector2 lookDelta = lookAction.ReadValue<Vector2>();
+            Vector2 lookDelta = lookAction.ReadValue<Vector2>();//doc look
 
             // Apply sensitivity
             xRotation += lookDelta.x * mouseSensitivity;
             yRotation -= lookDelta.y * mouseSensitivity;
 
-            // Clamp vertical rotation
+            // limit vertical rotation
             yRotation = Mathf.Clamp(yRotation, -30f, 60f);
         }   
     }
