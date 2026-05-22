@@ -12,7 +12,7 @@ public class PlayerLook : MonoBehaviour
     private float yRotation;
     private PlayerInput playerInput;
     private InputAction lookAction;
-
+        
     private void Start()
     {
         //Set up input
@@ -27,7 +27,7 @@ public class PlayerLook : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;//shiftlock
     }
     //ham thoat shiftlock
-    private void OnDisable()
+    public void OnDisable()
     {
         lookAction?.Disable();
         Cursor.lockState = CursorLockMode.None;
@@ -42,8 +42,8 @@ public class PlayerLook : MonoBehaviour
             Vector2 lookDelta = lookAction.ReadValue<Vector2>();//doc look
 
             // Apply sensitivity
-            xRotation += lookDelta.x * mouseSensitivity;
-            yRotation -= lookDelta.y * mouseSensitivity;
+            xRotation += lookDelta.x * mouseSensitivity *Time.deltaTime;
+            yRotation -= lookDelta.y * mouseSensitivity *Time.deltaTime;
 
             // limit vertical rotation
             yRotation = Mathf.Clamp(yRotation, -30f, 60f);

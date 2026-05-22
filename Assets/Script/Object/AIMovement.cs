@@ -17,6 +17,14 @@ public class AIMovement : MonoBehaviour
 
     private Animator anm;
 
+    [Header("Fighting Setting")]
+    [SerializeField] private float attackRange = 2f;
+    [SerializeField] private float attackDamage = 15f;
+    [SerializeField] private float attackCooldown = 1.5f;
+    
+    private float nextAttackTime = 0f;
+    private bool isAttacking = false;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -26,22 +34,68 @@ public class AIMovement : MonoBehaviour
         timer = wanderTimer;
         //set Speed
         norSpeed = agent.speed;
+
+        // Tự động tìm Player bằng tag nếu chưa gán
+        if (player == null)
+        {
+            GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+            if (playerObj != null)
+            {
+                player = playerObj.transform;
+            }
+            else
+            {
+                //
+                SurvivalStats stats = FindObjectOfType<SurvivalStats>();
+                if (stats != null)
+                {
+                    player = stats.transform;
+                }
+                else
+                {
+                    // 
+                    PlayerMovement movement = FindObjectOfType<PlayerMovement>();
+                    if (movement != null)
+                    {
+                        player = movement.transform;
+                    }
+                }
+            }
+        }
+
+        if (player == null)
+        {
+            Debug.LogError("[AIMovement] Không tìm thấy Player trong Scene! Hãy đảm bảo Player có tag 'Player' hoặc có gắn script SurvivalStats/PlayerMovement.", this);
+        }
     }
 
     // Update is called once per frame
     void Update()
     {
+        if (player == null || isAttacking) return;
+
         float distance = Vector3.Distance(transform.position, player.position);//lay khoang cach
 
         if (distance <= detectRange) //neu in range
         {
             agent.speed = norSpeed*2;//x2 speed
-            agent.SetDestination(player.position);//dat aim player
-            //aim
-            Vector3 lookPos = player.position - transform.position;//lay huong tu AI->Player
-            lookPos.y = 0;//avoid aim to body player
-            //rotate, slerp(from, to, speedRotate)
-            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(lookPos), 5*Time.deltaTime);
+            
+            // Attack player
+            if (distance <= attackRange && Time.time >= nextAttackTime)
+            {
+                nextAttackTime = Time.time + attackCooldown;
+                StartCoroutine(LungeAttack());
+            }
+            else
+            {
+                agent.SetDestination(player.position);//dat aim player
+                
+                //aim rotate
+                Vector3 lookPos = player.position - transform.position;//lay huong tu AI->Player
+                lookPos.y = 0;//avoid aim to body player
+                //rotate, slerp(from, to, speedRotate)
+                transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(lookPos), 5*Time.deltaTime);
+            }
         }
         else//neu out range(normal)
         {
@@ -57,11 +111,67 @@ public class AIMovement : MonoBehaviour
                 timer = 0;
             }
         }
+        
         //set anm
-        float speedAI = agent.velocity.magnitude;//speed realtime
-        float speedPercent = agent.velocity.magnitude / agent.speed;
-        anm.SetFloat("Speed", speedPercent);
+        if (anm != null)
+        {
+            float speedPercent = agent.velocity.magnitude / agent.speed;
+            anm.SetFloat("Speed", speedPercent);
+        }
     }
+
+    //func attack by going forward
+    private IEnumerator LungeAttack()
+    {
+        isAttacking = true;
+        
+        agent.enabled = false;
+
+        Vector3 originalPosition = transform.position;
+        // lay huong ve player
+        Vector3 directionToPlayer = (player.position - transform.position).normalized;
+        directionToPlayer.y = 0; 
+        Vector3 targetPosition = originalPosition + directionToPlayer * 1.5f;
+
+        // attack forwrad
+        float elapsed = 0f;
+        float duration = 0.12f; // attack time
+        while (elapsed < duration)
+        {
+            transform.position = Vector3.Lerp(originalPosition, targetPosition, elapsed / duration);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+        transform.position = targetPosition;
+
+        // take damame on player
+        if (SurvivalStats.Instance != null)
+        {
+            SurvivalStats.Instance.TakeDamage(attackDamage);
+            Debug.Log($"[AIMovement] Quái húc trúng người chơi! Gây {attackDamage} sát thương. Máu người chơi còn: {SurvivalStats.Instance.CurrentHealth}");
+        }
+        else
+        {
+            Debug.LogWarning("[AIMovement] Không tìm thấy SurvivalStats.Instance trên người chơi để gây sát thương!");
+        }
+
+        // go back old pos 
+        elapsed = 0f;
+        while (elapsed < duration)
+        {
+            transform.position = Vector3.Lerp(targetPosition, originalPosition, elapsed / duration);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+        transform.position = originalPosition;
+
+        // wait a bit before moving
+        yield return new WaitForSeconds(0.15f);
+
+        agent.enabled = true;
+        isAttacking = false;
+    }
+
     //ham tao random
     public static Vector3 RandomNavSphere(Vector3 pos, float radius, int layerMask)
     {

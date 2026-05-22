@@ -2,6 +2,7 @@ using Cinemachine.Utility;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class PlayerMovement : MonoBehaviour
 {
@@ -9,7 +10,7 @@ public class PlayerMovement : MonoBehaviour
 
     [SerializeField] private float speed = 10f;
     [SerializeField] private float gravity = -9.8f;//- de roi 
-    [SerializeField] private float jump = 3f;
+    [SerializeField] private float jumpHeight = 3f;
 
     [SerializeField] private Transform groundCheck;
     [SerializeField] private float groundDistance = 0.2f;
@@ -17,31 +18,60 @@ public class PlayerMovement : MonoBehaviour
 
     Vector3 velocity;
     private bool isGrounded;
+    private Animator animator;
 
+    private PlayerInput playerInput;
+    private InputAction move;
+    private InputAction jump;
+
+    private void Start()
+    {
+        //get component
+        playerInput = GetComponent<PlayerInput>();
+        animator = GetComponentInChildren<Animator>();
+        //get actions and enable
+        move = playerInput.actions["move"];
+        jump = playerInput.actions["jump"];
+        move.Enable();
+        jump.Enable();
+    }
     // Update is called once per frame
     void Update()
     {
         //check ground  
         isGrounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);
+        animator.SetBool("isGrounded", isGrounded);
         if (isGrounded && velocity.y < 0)//if player touched ground and is dropping
         {
             velocity.y = -2f;//set sau 1 ti de phu hop voi map ko phang
         }
         //set move forward-back-right-left
-        float x = Input.GetAxis("Horizontal");
-        float z = Input.GetAxis("Vertical");
+        Vector2 input = move.ReadValue<Vector2>();
+        float x = input.x;
+        float z = input.y;//z to forward and use y input
         //move
-        Vector3 move = transform.right * x + transform.forward * z;
-        characterController.Move(move * speed * Time.deltaTime);
+        Vector3 movePlayer = transform.right * x + transform.forward * z;
+        characterController.Move(movePlayer * speed * Time.deltaTime);
+        //Anm move
+        float speedVelocity = characterController.velocity.magnitude;//get real velocoty
+        float speedPercent = speedVelocity / speed;//get percent velocity
+        animator.SetFloat("Speed", speedPercent);
 
         //if player is on ground ->jump
-        if(Input.GetKeyDown(KeyCode.Space) && isGrounded)
+        // Use Input System jump action instead of legacy Input.GetKeyDown
+        if (jump.WasPressedThisFrame() && isGrounded)
         {
-            //Cong thuc van toc v^2=2hg
-            velocity.y = Mathf.Sqrt(jump * -2f * gravity);//khai can va *-2 de ra duong
+            // Apply jump using physics formula v = sqrt(2 * g * h)
+            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
         }
         //roi xuong
         velocity.y += gravity * Time.deltaTime;
         characterController.Move(velocity * Time.deltaTime);
     }
+    //anm attack
+    public void Attack()
+    {
+        animator.SetTrigger("Hit");
+    }    
+    
 }

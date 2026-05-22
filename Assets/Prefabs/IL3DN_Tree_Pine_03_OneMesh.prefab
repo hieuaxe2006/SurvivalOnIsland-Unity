@@ -182,6 +182,7 @@ GameObject:
   - component: {fileID: 800319858011494679}
   - component: {fileID: 5322268726363403460}
   - component: {fileID: 8928846119500229268}
+  - component: {fileID: 7686330629844711359}
   m_Layer: 0
   m_Name: IL3DN_Tree_Pine_03_OneMesh
   m_TagString: Untagged
@@ -197,9 +198,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6670141732771390101}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.000000021855694, y: 0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 2, y: 1, z: 2}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2923234289133245019}
@@ -270,6 +271,32 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ObjectName: Tree
+  isInRange: 0
+  itemData: {fileID: 11400000, guid: 7f8b56b02ab7af747b2c052884c2edc3, type: 2}
+  interactType: 1
+  maxHits: 3
+  dropAmount: 3
+--- !u!65 &7686330629844711359
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6670141732771390101}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 4.1759644, y: 17.844053, z: 4.1429977}
+  m_Center: {x: -0.48039246, y: 8.422029, z: -0.19504207}
 --- !u!1 &7116658303104059924
 GameObject:
   m_ObjectHideFlags: 0
