@@ -84,7 +84,7 @@ public class AIMovement : MonoBehaviour
             if (distance <= attackRange && Time.time >= nextAttackTime)
             {
                 nextAttackTime = Time.time + attackCooldown;
-                StartCoroutine(LungeAttack());
+                StartCoroutine(AttackSequence());
             }
             else
             {
@@ -120,55 +120,52 @@ public class AIMovement : MonoBehaviour
         }
     }
 
-    //func attack by going forward
-    private IEnumerator LungeAttack()
+    //func attack stand and trigger animation
+    private IEnumerator AttackSequence()
     {
         isAttacking = true;
-        
-        agent.enabled = false;
 
-        Vector3 originalPosition = transform.position;
-        // lay huong ve player
-        Vector3 directionToPlayer = (player.position - transform.position).normalized;
-        directionToPlayer.y = 0; 
-        Vector3 targetPosition = originalPosition + directionToPlayer * 1.5f;
-
-        // attack forwrad
-        float elapsed = 0f;
-        float duration = 0.12f; // attack time
-        while (elapsed < duration)
+        // Dừng di chuyển
+        if (agent != null && agent.isActiveAndEnabled)
         {
-            transform.position = Vector3.Lerp(originalPosition, targetPosition, elapsed / duration);
-            elapsed += Time.deltaTime;
-            yield return null;
-        }
-        transform.position = targetPosition;
-
-        // take damame on player
-        if (SurvivalStats.Instance != null)
-        {
-            SurvivalStats.Instance.TakeDamage(attackDamage);
-            Debug.Log($"[AIMovement] Quái húc trúng người chơi! Gây {attackDamage} sát thương. Máu người chơi còn: {SurvivalStats.Instance.CurrentHealth}");
-        }
-        else
-        {
-            Debug.LogWarning("[AIMovement] Không tìm thấy SurvivalStats.Instance trên người chơi để gây sát thương!");
+            agent.isStopped = true;
         }
 
-        // go back old pos 
-        elapsed = 0f;
-        while (elapsed < duration)
+        // Quay mặt về hướng Player
+        Vector3 lookPos = player.position - transform.position;
+        lookPos.y = 0;
+        if (lookPos != Vector3.zero)
         {
-            transform.position = Vector3.Lerp(targetPosition, originalPosition, elapsed / duration);
-            elapsed += Time.deltaTime;
-            yield return null;
+            transform.rotation = Quaternion.LookRotation(lookPos);
         }
-        transform.position = originalPosition;
 
-        // wait a bit before moving
-        yield return new WaitForSeconds(0.15f);
+        // Kích hoạt hoạt ảnh tấn công
+        if (anm != null)
+        {
+            anm.SetTrigger("Attack");
+        }
 
-        agent.enabled = true;
+        // Đợi 0.5 giây khớp với thời điểm vung tay cào trúng của hoạt ảnh
+        yield return new WaitForSeconds(0.5f);
+
+        // Gây sát thương nếu người chơi vẫn ở trong tầm
+        if (player != null && Vector3.Distance(transform.position, player.position) <= attackRange + 0.5f)
+        {
+            if (SurvivalStats.Instance != null && !SurvivalStats.Instance.IsDead)
+            {
+                SurvivalStats.Instance.TakeDamage(attackDamage);
+                Debug.Log($"[AIMovement] Quái cào trúng người chơi! Gây {attackDamage} sát thương. Máu người chơi còn: {SurvivalStats.Instance.CurrentHealth}");
+            }
+        }
+
+        // Chờ hoàn thành nốt hoạt ảnh tấn công trước khi di chuyển tiếp
+        yield return new WaitForSeconds(0.5f);
+
+        // Tiếp tục di chuyển
+        if (agent != null && agent.isActiveAndEnabled)
+        {
+            agent.isStopped = false;
+        }
         isAttacking = false;
     }
 

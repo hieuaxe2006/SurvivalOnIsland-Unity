@@ -19,5 +19,6 @@ MonoBehaviour:
   prefab3D: {fileID: 1452301091832352, guid: d0c4f180f05f3e2488dfc85694e6ac67, type: 3}
   equipPos: {x: -0.507, y: -0.23, z: 0.044}
   equipRot: {x: 32.055, y: -89.14, z: -86.65}
-  damage: 0
+  damage: 3
+  treeDamage: 2
   healAmount: 0

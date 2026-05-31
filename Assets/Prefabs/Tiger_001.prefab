@@ -933,8 +933,8 @@ GameObject:
   - component: {fileID: -8726210602455411225}
   - component: {fileID: 6705155972638531508}
   - component: {fileID: 6733029402994111708}
-  - component: {fileID: 4659253819973307427}
   - component: {fileID: 394798388521083158}
+  - component: {fileID: 105816128955087989}
   m_Layer: 8
   m_Name: Tiger_001
   m_TagString: Untagged
@@ -1067,24 +1067,9 @@ MonoBehaviour:
   detectRange: 25
   wanderRadius: 5
   wanderTimer: 4
---- !u!114 &4659253819973307427
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5883155896844355918}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0c7679bb7ac594548a699e95c0b618e5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ObjectName: Tiger
-  isInRange: 0
-  itemData: {fileID: 0}
-  interactType: 2
-  maxHits: 3
-  dropAmount: 2
+  attackRange: 2
+  attackDamage: 15
+  attackCooldown: 1.5
 --- !u!135 &394798388521083158
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -1106,6 +1091,24 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 3.2842674
   m_Center: {x: 0, y: 1.3220458, z: -0.1846962}
+--- !u!114 &105816128955087989
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5883155896844355918}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b834a88c1567bbd4b867ee811e53c429, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealth: 20
+  currentHealth: 0
+  healthBarFill: {fileID: 0}
+  healthBarCanvas: {fileID: 0}
+  dropItem: {fileID: 11400000, guid: 2fccc48b39ccd0444890bcb734dcfaa8, type: 2}
+  dropAmount: 2
 --- !u!1 &6083925854692512673
 GameObject:
   m_ObjectHideFlags: 0

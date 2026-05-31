@@ -26,6 +26,14 @@ public class PlayerLook : MonoBehaviour
         // Lock cursor
         Cursor.lockState = CursorLockMode.Locked;//shiftlock
     }
+    //ham shiftlock(use for dialogue)
+    private void OnEnable()
+    {
+        lookAction?.Enable();
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+    }
+
     //ham thoat shiftlock
     public void OnDisable()
     {
@@ -36,7 +44,7 @@ public class PlayerLook : MonoBehaviour
 
     private void Update()
     {
-        if (lookAction != null)
+        if (lookAction != null && Cursor.lockState == CursorLockMode.Locked)
         {
             // Get input from new Input System
             Vector2 lookDelta = lookAction.ReadValue<Vector2>();//doc look

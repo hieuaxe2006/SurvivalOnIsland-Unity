@@ -123,9 +123,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ObjectName: Coconut Tree
   isInRange: 0
-  itemData: {fileID: 0}
-  interactType: 2
-  maxHits: 3
+  itemData: {fileID: 11400000, guid: 747bc424de50b634c9524160dc26d4fc, type: 2}
+  interactType: 1
+  maxHits: 5
   dropAmount: 2
 --- !u!65 &2229901177550663234
 BoxCollider:

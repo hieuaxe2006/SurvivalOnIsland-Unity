@@ -24,6 +24,7 @@ public class SurvivalStats : MonoBehaviour
     [SerializeField] private float starveDamageRate = 5f;
 
     public bool IsDead { get; private set; }
+    private float nextHurtSoundTime = 0f;
 
     // get method
     public float HealthPercent => currentHealth / maxHealth;
@@ -76,11 +77,52 @@ public class SurvivalStats : MonoBehaviour
         {
             TakeDamage(starveDamageRate * Time.deltaTime);
         }
+        else
+        {
+            //regen 1%HP each 1sec
+            Heal(maxHealth * 0.01f * Time.deltaTime);
+        }
     }
+
+    public void Consume(ItemData consumable)
+    {
+        if (consumable == null || IsDead) return;
+
+        //check food or drink
+        if (consumable.itemName == "Coconut")
+        {
+            currentThirst += 15;
+            currentThirst = Mathf.Clamp(currentThirst, 0f, maxThirst);
+            Debug.Log($"Uống nước dừa! Khát: {currentThirst}");
+        }
+        else
+        {
+            currentHunger += 15;
+            currentHunger = Mathf.Clamp(currentHunger, 0f, maxHunger);
+            Debug.Log($"Ăn thức ăn! Đói: {currentHunger}");
+        }
+    }
+
     //func attack damage on player
     public void TakeDamage(float amount)
     {
         if (IsDead) return;
+
+        // Khong nhan damage khi da hoan thanh game (tranh bug quai can chet sau khi da win)
+        if (QuestManager.Instance != null && QuestManager.Instance.currentState == QuestState.Completed)
+        {
+            return;
+        }
+
+        // Phát âm thanh khi mất máu (giới hạn tần suất 1s/lần và chỉ với damage thực tế >= 1)
+        if (amount >= 1f && Time.time >= nextHurtSoundTime)
+        {
+            nextHurtSoundTime = Time.time + 1.0f;
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayHurt();
+            }
+        }
 
         currentHealth -= amount;
         currentHealth = Mathf.Clamp(currentHealth, 0f, maxHealth);
@@ -103,7 +145,43 @@ public class SurvivalStats : MonoBehaviour
     {
         IsDead = true;
         Debug.Log("[SurvivalStats] Người chơi đã tử vong!");
+
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlaySFX(AudioManager.Instance.sfxDeath);
+        }
         
-        //anm
+        Animator animator = GetComponentInChildren<Animator>();
+        if (animator != null)
+        {
+            animator.SetTrigger("Die");
+        }
+        else
+        {
+            Debug.LogWarning("[SurvivalStats] Không tìm thấy Animator trên Player để chạy animation Die!");
+        }
+
+        if (DeathUI.Instance != null)
+        {
+            DeathUI.Instance.TriggerDeathScreen();
+        }
+    }
+
+    public void Respawn()
+    {
+        currentHealth = maxHealth;
+        currentHunger = maxHunger;
+        currentThirst = maxThirst;
+        IsDead = false;
+        Debug.Log("[SurvivalStats] Người chơi đã hồi sinh!");
+    }
+
+    public void RestoreStats(float health, float hunger, float thirst)
+    {
+        currentHealth = Mathf.Clamp(health, 0f, maxHealth);
+        currentHunger = Mathf.Clamp(hunger, 0f, maxHunger);
+        currentThirst = Mathf.Clamp(thirst, 0f, maxThirst);
+        IsDead = false;
+        Debug.Log($"[SurvivalStats] Restored Stats - HP: {currentHealth}, Hunger: {currentHunger}, Thirst: {currentThirst}");
     }
 }

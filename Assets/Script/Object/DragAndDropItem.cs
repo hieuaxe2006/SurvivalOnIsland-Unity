@@ -30,9 +30,16 @@ public class DragAndDropItem : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     {
         if (eventData.button == PointerEventData.InputButton.Right)
         {
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayClick();
+            }
             if (inventoryItem != null && inventoryItem.itemData != null)
             {
-                EquipManager.Instance.Equip(inventoryItem.itemData);
+                if (EquipManager.Instance != null)
+                {
+                    EquipManager.Instance.Equip(inventoryItem.itemData);
+                }
             }
         }
     }

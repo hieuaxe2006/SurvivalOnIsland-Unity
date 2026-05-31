@@ -16,6 +16,7 @@ public class ItemData : ScriptableObject
     public Vector3 equipPos;      // position when equipped
     public Vector3 equipRot;      // rotation when equipped
     public int damage;            // dame weapon type
+    public int treeDamage;        // damage to harvestable objects (trees/rocks)
     public int healAmount;        // For food (hunger/thirst)
 }
 

@@ -6,7 +6,6 @@ public enum InteractType { Collectable, Harvestable, InfoOnly }
 
 public class InteractableObject : MonoBehaviour
 {
-    public string ObjectName;
     public bool isInRange;
     public ItemData itemData;
     public InteractType interactType = InteractType.Collectable;
@@ -19,20 +18,30 @@ public class InteractableObject : MonoBehaviour
 
     public string GetObjectName()
     {
-        if (itemData != null && interactType == InteractType.Collectable)
+        if (itemData != null)
             return itemData.itemName;
-        return ObjectName;//fallback neu chua gan itemData hoac la cay (Harvestable/InfoOnly)
+        return gameObject.name;//fallback neu chua gan itemData hoac la cay (Harvestable/InfoOnly)
     }
 
-    public void TakeHit(ItemData toolUsed)
+    public int GetCurrentHits()
+    {
+        return currentHits;
+    }
+
+    public void TakeHit(int damage)
     {
         if (interactType != InteractType.Harvestable) return;//if click to unharvestable -> none
 
-        // Allow tool/weapon/stone chat cay
-        if (toolUsed != null && (toolUsed.itemType == ItemType.Tool || toolUsed.itemType == ItemType.Weapon || toolUsed.itemName == "Stone" ))
+        if (damage > 0)
         {
-            currentHits++;
-            Debug.Log(ObjectName + " bi danh " + currentHits + "/" + maxHits);
+            currentHits += damage;
+            Debug.Log(GetObjectName() + " bi danh sat thuong " + damage + ". Tong: " + currentHits + "/" + maxHits);
+
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayHit3D(transform.position);
+            }
+
 
             if (currentHits >= maxHits)
             {
@@ -41,7 +50,7 @@ public class InteractableObject : MonoBehaviour
         }
         else
         {
-            Debug.Log("Ban can cam Axe hoac Tool de chat/dap " + ObjectName);
+            Debug.Log("Ban can cam Axe hoac Tool phu hop de chat/dap " + GetObjectName());
         }
     }
 
@@ -81,9 +90,9 @@ public class InteractableObject : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning(ObjectName + " khong co ItemData hoac prefab3D de drop!");
+            Debug.LogWarning(GetObjectName() + " khong co ItemData hoac prefab3D de drop!");
         }
-        Debug.Log("Khai thac xong " + ObjectName);
+        Debug.Log("Khai thac xong " + GetObjectName());
         Destroy(gameObject);
     }
 

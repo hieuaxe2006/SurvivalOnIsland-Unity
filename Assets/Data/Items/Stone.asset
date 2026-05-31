@@ -20,5 +20,6 @@ MonoBehaviour:
     type: 3}
   equipPos: {x: -0.04, y: 0.02, z: 0.025}
   equipRot: {x: 0, y: -94.4, z: 0}
-  damage: 0
+  damage: 2
+  treeDamage: 1
   healAmount: 0

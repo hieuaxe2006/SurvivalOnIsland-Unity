@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c370e0058f6ec649a0a6d40368e0e84, type: 3}
+  m_Name: Campfire
+  m_EditorClassIdentifier: 
+  itemName: Campfire
+  icon: {fileID: -1874514117, guid: eeb6d62f9a929bd45b28539e0f5dc8df, type: 3}
+  itemType: 4
+  maxStack: 100
+  prefab3D: {fileID: 2442637503912092476, guid: 1efa7d8517b60464097ce65eaeae7d93,
+    type: 3}
+  equipPos: {x: 0, y: 0, z: 0.044}
+  equipRot: {x: 0, y: 0, z: -86.65}
+  damage: 0
+  healAmount: 0

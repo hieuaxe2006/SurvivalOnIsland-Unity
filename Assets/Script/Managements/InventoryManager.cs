@@ -224,6 +224,7 @@ public class InventoryManager : MonoBehaviour
                     else
                     {
                         toRemove -= item.amount;
+                        item.amount = 0; // Fix loi dem sai so luong
                         Destroy(slot.transform.GetChild(0).gameObject);
                     }
                 }
@@ -235,6 +236,26 @@ public class InventoryManager : MonoBehaviour
             OnInventoryChanged?.Invoke();
 
         return toRemove <= 0;
+    }
+
+    public List<GameObject> GetSlotList()
+    {
+        return slotList;
+    }
+
+    public void ClearInventory()
+    {
+        foreach (GameObject slot in slotList)
+        {
+            if (slot != null && slot.transform.childCount > 0)
+            {
+                for (int i = slot.transform.childCount - 1; i >= 0; i--)
+                {
+                    Destroy(slot.transform.GetChild(i).gameObject);
+                }
+            }
+        }
+        OnInventoryChanged?.Invoke();
     }
 }
 

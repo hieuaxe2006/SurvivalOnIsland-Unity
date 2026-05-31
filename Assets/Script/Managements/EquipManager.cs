@@ -40,6 +40,11 @@ public class EquipManager : MonoBehaviour
             Debug.LogWarning("Item " + item.itemName + " does not have a prefab3D for equipping.");
             return;
         }
+        if(item.itemName == "AirplanePart")
+        {
+            Debug.Log("Item" + item.itemName + " cant be equiped");
+            return;
+        }
 
         // Instantiate model moi vao tay
         currentModel = Instantiate(item.prefab3D, handSlot);
@@ -47,6 +52,19 @@ public class EquipManager : MonoBehaviour
         currentModel.transform.localPosition = item.equipPos;
         currentModel.transform.localRotation = Quaternion.Euler(item.equipRot);
         
+        // --- FIX BUG NHẶT ĐỒ TỪ TRÊN TAY ---
+        // Vô hiệu hóa script InteractableObject và Collider để tia Raycast (tâm ngắm) 
+        // không tự bắn trúng đồ vật đang cầm trên tay.
+        InteractableObject interactObj = currentModel.GetComponent<InteractableObject>();
+        if (interactObj != null) Destroy(interactObj);
+
+        Collider[] colliders = currentModel.GetComponentsInChildren<Collider>();
+        foreach(Collider col in colliders)
+        {
+            col.enabled = false;
+        }
+        // ------------------------------------
+
         currentEquipped = item;
         Debug.Log("Equipped: " + item.itemName);
         

@@ -20,6 +20,10 @@ public class PlayerMovement : MonoBehaviour
     private bool isGrounded;
     private Animator animator;
 
+    [Header("Footstep Settings")]
+    [SerializeField] private float footstepInterval = 0.5f;
+    private float footstepTimer = 0f;
+
     private PlayerInput playerInput;
     private InputAction move;
     private InputAction jump;
@@ -56,6 +60,24 @@ public class PlayerMovement : MonoBehaviour
         float speedVelocity = characterController.velocity.magnitude;//get real velocoty
         float speedPercent = speedVelocity / speed;//get percent velocity
         animator.SetFloat("Speed", speedPercent);
+
+        // Footstep sounds
+        if (isGrounded && speedVelocity > 0.1f)
+        {
+            footstepTimer += Time.deltaTime;
+            if (footstepTimer >= footstepInterval)
+            {
+                if (AudioManager.Instance != null)
+                {
+                    AudioManager.Instance.PlayFootstep();
+                }
+                footstepTimer = 0f;
+            }
+        }
+        else
+        {
+            footstepTimer = footstepInterval; // Reset so next step sounds immediately
+        }
 
         //if player is on ground ->jump
         // Use Input System jump action instead of legacy Input.GetKeyDown

@@ -119,6 +119,11 @@ public class CraftingRecipeUI : MonoBehaviour
         // add product
         InventoryManager.Instance.addItem(bluePrint.resultItem);
 
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayCollect();
+        }
+
         Debug.Log("Crafted: " + bluePrint.resultItem.itemName);
     }
 }

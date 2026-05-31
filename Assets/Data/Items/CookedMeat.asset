@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c370e0058f6ec649a0a6d40368e0e84, type: 3}
+  m_Name: CookedMeat
+  m_EditorClassIdentifier: 
+  itemName: CookedMeat
+  icon: {fileID: 21300000, guid: 00d20cde523913140b39c720b59608de, type: 3}
+  itemType: 3
+  maxStack: 100
+  prefab3D: {fileID: 6368588269510778342, guid: 5ad48d29058c64b4b9043e063c68f8a3,
+    type: 3}
+  equipPos: {x: 0, y: 0, z: 0}
+  equipRot: {x: 0, y: 0, z: 0}
+  damage: 0
+  healAmount: 0
