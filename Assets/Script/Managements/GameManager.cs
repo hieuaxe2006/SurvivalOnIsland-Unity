@@ -7,7 +7,7 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance { get; private set; }
 
     [Header("UI Pause Menu")]
-    [SerializeField] private GameObject pauseMenuPanel; // Panel chua Menu Pause (ESC)
+    [SerializeField] private GameObject pauseMenuPanel; // Reference to the Pause Panel GameObject
     
     private bool isPaused = false;
     private PlayerMovement playerMovement;
@@ -15,6 +15,7 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
+        // Keep GameManager alive across all scene transitions
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -22,7 +23,7 @@ public class GameManager : MonoBehaviour
         else
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject); // Giu GameManager qua cac scene
+            DontDestroyOnLoad(gameObject);
         }
     }
 
@@ -34,11 +35,11 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        // Khi bam ESC thi bat/tat Pause Menu (chi cho phep khi dang trong scene GamePlay)
+        // Toggle pause menu with ESC (only in gameplay scene)
         bool isEscapePressed = Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame;
         if (isEscapePressed && SceneManager.GetActiveScene().name == "GamePlay")
         {
-            // Tranh bat pause khi dang trong hoi thoai hoac player da chet
+            // Do not pause if player is in dialogue or is dead
             bool isDialogueActive = DialogueUI.Instance != null && DialogueUI.Instance.IsDialogueActive();
             bool isDead = SurvivalStats.Instance != null && SurvivalStats.Instance.IsDead;
 
@@ -66,14 +67,15 @@ public class GameManager : MonoBehaviour
         SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
+    // Runs automatically whenever a new scene is loaded
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         isPaused = false;
-        Time.timeScale = 1f; // Reset timescale khi chuyen scene
+        Time.timeScale = 1f; // Reset timescale on scene load
         FindSceneReferences();
         CheckAndFixEventSystem();
 
-        // Kiem tra ten scene de setup con tro chuot phu hop
+        // Manage mouse cursor state based on active scene
         if (scene.name == "MainMenu" || scene.name == "EndScene")
         {
             Cursor.lockState = CursorLockMode.None;
@@ -84,15 +86,38 @@ public class GameManager : MonoBehaviour
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
 
-            // Load game neu continue duoc bam
-            if (SaveLoadManager.shouldLoadSave && SaveLoadManager.Instance != null)
+            // Defer loading to ensure all game objects are fully initialized first
+            if (SaveLoadManager.shouldLoadSave)
             {
-                SaveLoadManager.Instance.LoadGame();
-                SaveLoadManager.shouldLoadSave = false; // Reset
+                StartCoroutine(LoadSaveDeferred());
             }
         }
     }
 
+    // Wait exactly 1 frame for Awake/Start methods to finish before loading save
+    private System.Collections.IEnumerator LoadSaveDeferred()
+    {
+        yield return null;
+
+        SaveLoadManager slm = SaveLoadManager.Instance;
+        if (slm == null)
+        {
+            slm = FindObjectOfType<SaveLoadManager>();
+        }
+
+        if (slm != null)
+        {
+            slm.LoadGame();
+        }
+        else
+        {
+            Debug.LogError("[GameManager] SaveLoadManager not found in scene!");
+        }
+
+        SaveLoadManager.shouldLoadSave = false; // Reset state
+    }
+
+    // Automatically locate references in the active scene
     private void FindSceneReferences()
     {
         playerMovement = FindObjectOfType<PlayerMovement>();
@@ -101,17 +126,17 @@ public class GameManager : MonoBehaviour
             playerLook = playerMovement.GetComponent<PlayerLook>();
         }
 
-        // Re-find the PausePanel dynamically since GameManager is DontDestroyOnLoad
+        // Find the Pause Panel in the scene dynamically
         if (pauseMenuPanel == null)
         {
             pauseMenuPanel = FindInactiveGameObjectInScene("PausePanel");
         }
 
+        // Setup button click events in the Pause Menu dynamically
         if (pauseMenuPanel != null)
         {
-            pauseMenuPanel.SetActive(false); // An pause menu luc dau
+            pauseMenuPanel.SetActive(false);
 
-            // Gan listener cho cac button trong PausePanel de tranh loi hoat dong do Singleton GameManager bi huy
             UnityEngine.UI.Button[] buttons = pauseMenuPanel.GetComponentsInChildren<UnityEngine.UI.Button>(true);
             foreach (UnityEngine.UI.Button button in buttons)
             {
@@ -121,25 +146,23 @@ public class GameManager : MonoBehaviour
                     {
                         button.onClick.RemoveAllListeners();
                         button.onClick.AddListener(ResumeGame);
-                        Debug.Log("[GameManager] Bound Resume button dynamically.");
                     }
                     else if (button.gameObject.name == "MainMenu")
                     {
                         button.onClick.RemoveAllListeners();
                         button.onClick.AddListener(GoToMainMenu);
-                        Debug.Log("[GameManager] Bound MainMenu button dynamically.");
                     }
                     else if (button.gameObject.name == "Quit")
                     {
                         button.onClick.RemoveAllListeners();
                         button.onClick.AddListener(QuitGame);
-                        Debug.Log("[GameManager] Bound Quit button dynamically.");
                     }
                 }
             }
         }
     }
 
+    // Helper to find GameObjects that are inactive in the scene hierarchy
     private GameObject FindInactiveGameObjectInScene(string objectName)
     {
         Scene activeScene = SceneManager.GetActiveScene();
@@ -160,55 +183,68 @@ public class GameManager : MonoBehaviour
         return null;
     }
 
+    // Pause the game (stops time and enables cursor)
     public void PauseGame()
     {
         isPaused = true;
-        Time.timeScale = 0f; // Dung thoi gian trong game
+        Time.timeScale = 0f;
 
         if (pauseMenuPanel != null)
         {
             pauseMenuPanel.SetActive(true);
         }
 
-        // Vo hieu hoa dieu khien cua player
         SetPlayerControl(false);
     }
 
+    // Resume the game (resumes time and locks cursor)
     public void ResumeGame()
     {
         isPaused = false;
-        Time.timeScale = 1f; // Chay lai thoi gian
+        Time.timeScale = 1f;
 
         if (pauseMenuPanel != null)
         {
             pauseMenuPanel.SetActive(false);
         }
 
-        // Bat lai dieu khien cua player
         SetPlayerControl(true);
     }
 
     public void LoadScene(string sceneName)
     {
-        Time.timeScale = 1f; // Reset thoi gian truoc khi load scene
+        Time.timeScale = 1f;
         SceneManager.LoadScene(sceneName);
     }
 
+    // Save progress and return to the Main Menu
     public void GoToMainMenu()
     {
-        // Tu dong save khi quay ve Menu tu gameplay
-        if (SaveLoadManager.Instance != null && SceneManager.GetActiveScene().name == "GamePlay")
+        if (SceneManager.GetActiveScene().name == "GamePlay")
         {
-            SaveLoadManager.Instance.SaveGame();
+            SaveLoadManager slm = SaveLoadManager.Instance;
+            if (slm == null)
+            {
+                slm = FindObjectOfType<SaveLoadManager>();
+            }
+
+            if (slm != null)
+            {
+                slm.SaveGame();
+            }
+            else
+            {
+                Debug.LogError("[GameManager] Could not find SaveLoadManager to save game progress!");
+            }
         }
 
-        ResumeGame(); // Reset pause state, timescale, v.v.
+        ResumeGame();
         LoadScene("MainMenu");
     }
 
     public void QuitGame()
     {
-        Debug.Log("Quitting game...");
+        Debug.Log("Quitting application...");
         Application.Quit();
     }
 
@@ -229,6 +265,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    // Replaces the old EventSystem input module with the new InputSystem UI module to avoid UI click errors
     private void CheckAndFixEventSystem()
     {
         UnityEngine.EventSystems.EventSystem eventSystem = FindObjectOfType<UnityEngine.EventSystems.EventSystem>();
@@ -239,7 +276,7 @@ public class GameManager : MonoBehaviour
             {
                 Destroy(oldModule);
                 eventSystem.gameObject.AddComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
-                Debug.Log("[GameManager] Replaced StandaloneInputModule with InputSystemUIInputModule on EventSystem.");
+                Debug.Log("[GameManager] Upgraded EventSystem to use the new InputSystem module.");
             }
         }
     }

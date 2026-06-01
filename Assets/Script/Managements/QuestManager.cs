@@ -9,17 +9,17 @@ public class QuestManager : MonoBehaviour
     public static QuestManager Instance { get; private set; }
 
     [Header("Quest Settings")]
-    public int totalParts = 5;
+    public int totalParts = 5; // Target count of AirplaneParts to collect
     public QuestState currentState = QuestState.NotStarted;
 
     [Header("Quest UI References")]
-    [SerializeField] private GameObject questPanel; // Khung UI chua thong tin quest
-    [SerializeField] private TMP_Text questText;     // Text hien thi: "Linh kien: 0/5"
+    [SerializeField] private GameObject questPanel; // Quest info container panel
+    [SerializeField] private TMP_Text questText; // Displays progress, e.g. "0 / 5"
 
     [Header("Win Trigger Settings")]
-    [SerializeField] private GameObject escapeTrigger; // Object chua trigger de thoat game (kich hoat khi quest Completed)
+    [SerializeField] private GameObject escapeTrigger; // Trigger inside plane cabin activated on quest completion
 
-    // Lay so luong linh kien tu Inventory
+    // Get the current number of AirplaneParts in the inventory
     public int partsCollected
     {
         get
@@ -34,6 +34,7 @@ public class QuestManager : MonoBehaviour
 
     private void Awake()
     {
+        // Singleton pattern setup
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -48,7 +49,7 @@ public class QuestManager : MonoBehaviour
     {
         if (escapeTrigger != null)
         {
-            escapeTrigger.SetActive(false); // An trigger escape luc dau
+            escapeTrigger.SetActive(false); // Hide escape trigger initially
         }
 
         UpdateQuestUI();
@@ -59,27 +60,28 @@ public class QuestManager : MonoBehaviour
         UpdateQuestUI();
     }
 
+    // Start the quest
     public void StartQuest()
     {
         if (currentState == QuestState.NotStarted)
         {
             currentState = QuestState.InProgress;
-            Debug.Log("Quest bat dau! Hay thu thap 5 linh kien vao Inventory.");
+            Debug.Log("Quest started! Find all 5 plane parts scattered on the island.");
         }
     }
 
+    // Complete the quest (removes the AirplaneParts and activates the escape trigger)
     public void CompleteQuest()
     {
         if (currentState == QuestState.InProgress)
         {
-            // Xoa 5 AirplanePart khoi inventory khi hoan thanh
             if (InventoryManager.Instance != null)
             {
                 InventoryManager.Instance.RemoveItem("AirplanePart", totalParts);
             }
 
             currentState = QuestState.Completed;
-            Debug.Log("Da hoan thanh nhiem vu sua may bay!");
+            Debug.Log("Quest completed! Cabin door is now open.");
             ActivateEscapeTrigger();
         }
     }
@@ -89,11 +91,11 @@ public class QuestManager : MonoBehaviour
         if (escapeTrigger != null)
         {
             escapeTrigger.SetActive(true);
-            Debug.Log("Cua thoat hiem (Escape Trigger) da duoc kich hoat! Hay chay vao may bay de tron thoat.");
+            Debug.Log("Escape cabin trigger activated! Go inside to leave the island.");
         }
         else
         {
-            Debug.LogWarning("Chua gan escapeTrigger trong QuestManager! Se ket thuc game lap tuc (gia lap).");
+            Debug.LogWarning("escapeTrigger not assigned in QuestManager!");
         }
     }
 
@@ -103,7 +105,6 @@ public class QuestManager : MonoBehaviour
 
         if (questPanel != null)
         {
-            // SetActive hoạt động an toàn từ manager luôn hoạt động
             questPanel.SetActive(isQuestActive);
         }
 
@@ -113,6 +114,7 @@ public class QuestManager : MonoBehaviour
         }
     }
 
+    // Used when loading a saved game to restore quest states
     public void RestoreQuestState(QuestState state)
     {
         currentState = state;

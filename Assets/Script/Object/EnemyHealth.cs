@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -27,13 +25,14 @@ public class EnemyHealth : MonoBehaviour
 
     private void Update()
     {
-        // rotate camera to player
+        // Rotate health bar to face camera
         if (healthBarCanvas != null && Camera.main != null)
         {
             healthBarCanvas.transform.rotation = Quaternion.LookRotation(healthBarCanvas.transform.position - Camera.main.transform.position);
         }
     }
 
+    /// <summary>Applies damage to this enemy.</summary>
     public void TakeHit(float damage)
     {
         if (isDead || damage <= 0) return;
@@ -47,9 +46,9 @@ public class EnemyHealth : MonoBehaviour
             AudioManager.Instance.PlayHit3D(transform.position);
         }
 
-        Debug.Log(gameObject.name + " bi danh sat thuong " + damage + ". Mau con lai: " + currentHealth);
+        Debug.Log(gameObject.name + " took " + damage + " damage. HP remaining: " + currentHealth);
 
-        // Hiển thị HP mục tiêu trên HUD
+        // Show target HP on HUD
         if (NotificationUI.Instance != null)
         {
             NotificationUI.Instance.ShowTargetHP(gameObject.name, currentHealth, maxHealth);
@@ -78,7 +77,7 @@ public class EnemyHealth : MonoBehaviour
             AudioManager.Instance.PlayDeath3D(transform.position);
         }
 
-        // Ẩn thanh máu UI
+        // Hide health bar UI
         if (healthBarCanvas != null)
         {
             healthBarCanvas.SetActive(false);
@@ -89,10 +88,10 @@ public class EnemyHealth : MonoBehaviour
         {
             for (int i = 0; i < dropAmount; i++)
             {
-                // Spawn random xung quanh
+                // Spawn at random offset around death position
                 Vector3 randomOffset = new Vector3(Random.Range(-1.5f, 1.5f), 0f, Random.Range(-1.5f, 1.5f));
                 Vector3 spawnPos = transform.position + randomOffset;
-                
+
                 if (Terrain.activeTerrain != null)
                 {
                     float terrainHeight = Terrain.activeTerrain.SampleHeight(spawnPos) + Terrain.activeTerrain.transform.position.y;
@@ -102,16 +101,16 @@ public class EnemyHealth : MonoBehaviour
                 {
                     spawnPos.y = transform.position.y + 0.5f;
                 }
-                
+
                 Instantiate(dropItem.prefab3D, spawnPos, Quaternion.identity);
             }
         }
         else
         {
-            Debug.LogWarning(gameObject.name + " khong co drop item data!");
+            Debug.LogWarning(gameObject.name + " has no drop item data!");
         }
 
-        Debug.Log("Tieu diet " + gameObject.name);
+        Debug.Log("Defeated " + gameObject.name);
         Destroy(gameObject);
     }
 }

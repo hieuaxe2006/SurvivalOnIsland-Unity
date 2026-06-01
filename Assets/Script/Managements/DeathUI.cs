@@ -48,12 +48,12 @@ public class DeathUI : MonoBehaviour
 
         if (deathPanel != null)
         {
-            deathPanel.SetActive(false); // hide ban dau
+            deathPanel.SetActive(false); // Hide panel at start
         }
 
         if (fadeOverlay != null)
         {
-            fadeOverlay.gameObject.SetActive(false); // hide overlay at start
+            fadeOverlay.gameObject.SetActive(false); // Hide overlay at start
             Color c = fadeOverlay.color;
             c.a = 0f;
             fadeOverlay.color = c;
@@ -64,10 +64,9 @@ public class DeathUI : MonoBehaviour
             victoryVideoOutput.gameObject.SetActive(false); // Hide video image at start
         }
 
-        // Đảm bảo các nút bấm và tiêu đề bị ẩn lúc đầu
+        // Hide buttons and title at start
         SetUIElementsActive(false);
 
-        // Đảm bảo video chiến thắng không tự chạy trên awake che mất gameplay
         if (victoryVideoPlayer != null)
         {
             victoryVideoPlayer.playOnAwake = false;
@@ -90,6 +89,7 @@ public class DeathUI : MonoBehaviour
         }
     }
 
+    // Triggers game over sequence
     public void TriggerDeathScreen()
     {
         if (hasTriggeredDeath) return;
@@ -98,11 +98,20 @@ public class DeathUI : MonoBehaviour
         if (AudioManager.Instance != null)
         {
             AudioManager.Instance.StopAmbient();
+            AudioManager.Instance.StopMusic();
+            AudioManager.Instance.PlaySFX(AudioManager.Instance.sfxDeath);
             AudioManager.Instance.PlayMusic(AudioManager.Instance.bgmGameOver, false);
         }
 
-        // Ẩn tất cả nút bấm và chữ ngay lập tức
+        // Disable player HUD panels if present
+        var hudCanvas = GameObject.Find("HUDCanvas") ?? GameObject.Find("HUD");
+        if (hudCanvas != null)
+        {
+            hudCanvas.SetActive(false);
+        }
+
         SetUIElementsActive(false);
+
         if (deathPanel != null)
         {
             deathPanel.SetActive(false);
@@ -112,40 +121,33 @@ public class DeathUI : MonoBehaviour
         StartCoroutine(TriggerDeathScreenSequence());
     }
 
-    //func get player info 
-    private void FindPlayerReferences()
-    {
-        playerMovement = FindObjectOfType<PlayerMovement>();
-        if (playerMovement != null)
-        {
-            playerLook = playerMovement.GetComponent<PlayerLook>();
-            characterController = playerMovement.GetComponent<CharacterController>();
-        }
-    }
-
     private IEnumerator TriggerDeathScreenSequence()
     {
+        // Save current death coordinates before respawn calculations
         if (playerMovement != null)
         {
             deathPosition = playerMovement.transform.position;
         }
-        else
-        {
-            deathPosition = Vector3.zero;
-        }
 
-        // Khóa điều khiển người chơi và mở khóa con trỏ chuột
+        // Lock player controls
         SetPlayerControl(false);
 
-        // Chờ 2 giây để hoạt ảnh chết chạy xong
-        yield return new WaitForSeconds(2f);
+        // Slow down camera look and player actions
+        if (playerLook != null)
+        {
+            playerLook.xRotation = 0f;
+            playerLook.yRotation = 0f;
+        }
 
-        // Hiển thị hiệu ứng mờ đen dần (Fade in)
+        // Wait 2s for falling down death animation to play out
+        yield return new WaitForSeconds(2.0f);
+
+        // Smoothly fade to a black overlay
         if (fadeOverlay != null)
         {
             fadeOverlay.gameObject.SetActive(true);
             float elapsed = 0f;
-            float duration = 1.0f;
+            float duration = 1.5f;
             Color c = fadeOverlay.color;
             while (elapsed < duration)
             {
@@ -158,7 +160,7 @@ public class DeathUI : MonoBehaviour
             fadeOverlay.color = c;
         }
 
-        // Chỉ hiển thị tiêu đề và nút sau khi đã fade đen xong 100%
+        // Show buttons and texts after fully faded black
         if (endTitleText != null)
         {
             endTitleText.gameObject.SetActive(true);
@@ -167,7 +169,7 @@ public class DeathUI : MonoBehaviour
 
         if (replayButton != null)
         {
-            replayButton.gameObject.SetActive(true); // Hiện nút Replay khi thua
+            replayButton.gameObject.SetActive(true); // Replay allowed on GameOver
         }
 
         if (menuButton != null)
@@ -186,19 +188,18 @@ public class DeathUI : MonoBehaviour
         }
     }
 
+    // Triggers victory screen sequence
     public void TriggerVictoryScreen()
     {
         if (hasTriggeredDeath) return;
         hasTriggeredDeath = true;
 
-        // Phát nhạc chiến thắng ngay lập tức để chạy song song cùng video
         if (AudioManager.Instance != null)
         {
             AudioManager.Instance.StopAmbient();
             AudioManager.Instance.PlayMusic(AudioManager.Instance.bgmVictory, true);
         }
 
-        // Ẩn tất cả nút bấm và chữ ngay lập tức
         SetUIElementsActive(false);
         if (deathPanel != null)
         {
@@ -211,16 +212,15 @@ public class DeathUI : MonoBehaviour
 
     private IEnumerator TriggerVictoryScreenSequence()
     {
-        // Khóa điều khiển người chơi và mở khóa con trỏ chuột
         SetPlayerControl(false);
 
-        // Phát video chiến thắng máy bay cất cánh bay lên trời
+        // Play the plane take-off video if assigned
         if (victoryVideoPlayer != null && victoryVideoOutput != null)
         {
             victoryVideoOutput.gameObject.SetActive(true);
             victoryVideoPlayer.Play();
 
-            // Chờ cho đến khi video chạy xong
+            // Wait until video has finished playing
             bool videoFinished = false;
             UnityEngine.Video.VideoPlayer.EventHandler onVideoFinished = null;
             onVideoFinished = (vp) => {
@@ -238,11 +238,10 @@ public class DeathUI : MonoBehaviour
         }
         else
         {
-            // Chờ 2 giây nếu không có video
             yield return new WaitForSeconds(2f);
         }
 
-        // Hiển thị hiệu ứng mờ đen dần (Fade in)
+        // Fade in black overlay
         if (fadeOverlay != null)
         {
             fadeOverlay.gameObject.SetActive(true);
@@ -260,7 +259,6 @@ public class DeathUI : MonoBehaviour
             fadeOverlay.color = c;
         }
 
-        // Chỉ hiển thị tiêu đề và nút sau khi đã fade đen xong 100%
         if (endTitleText != null)
         {
             endTitleText.gameObject.SetActive(true);
@@ -269,7 +267,7 @@ public class DeathUI : MonoBehaviour
 
         if (replayButton != null)
         {
-            replayButton.gameObject.SetActive(false); // Không có Replay khi thắng
+            replayButton.gameObject.SetActive(false); // No replay button on Victory
         }
 
         if (menuButton != null)
@@ -287,21 +285,21 @@ public class DeathUI : MonoBehaviour
             deathPanel.SetActive(true);
         }
 
-        // Xóa file save khi đã thoát đảo thành công
+        // Victory deletes the save file so players start fresh on next load
         if (SaveLoadManager.Instance != null)
         {
             SaveLoadManager.Instance.DeleteSave();
         }
     }
 
+    // Handles the Respawn logic
     public void RespawnPlayer()
     {
         if (AudioManager.Instance != null) AudioManager.Instance.PlayClick();
 
-        // Reset timescale de tranh game bi ngung khi load scene moi
         Time.timeScale = 1f;
 
-        // Xóa file save cũ vì người chơi đã chết, chơi lại từ đầu như New Game
+        // Wipe old save file because player died
         if (SaveLoadManager.Instance != null)
         {
             SaveLoadManager.Instance.DeleteSave();
@@ -314,7 +312,7 @@ public class DeathUI : MonoBehaviour
 
         SaveLoadManager.shouldLoadSave = false;
 
-        // Load lai scene Gameplay hien tai
+        // Reload the current gameplay scene
         string activeSceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
         UnityEngine.SceneManagement.SceneManager.LoadScene(activeSceneName);
     }
@@ -322,11 +320,12 @@ public class DeathUI : MonoBehaviour
     public void QuitToMenu()
     {
         if (AudioManager.Instance != null) AudioManager.Instance.PlayClick();
-
+        
+        Time.timeScale = 1f;
 
         if (GameManager.Instance != null)
         {
-            GameManager.Instance.LoadScene("MainMenu");
+            GameManager.Instance.GoToMainMenu();
         }
         else
         {
@@ -337,8 +336,18 @@ public class DeathUI : MonoBehaviour
     public void QuitGame()
     {
         if (AudioManager.Instance != null) AudioManager.Instance.PlayClick();
-        Debug.Log("Quitting application...");
+        Debug.Log("Quitting game...");
         Application.Quit();
+    }
+
+    private void FindPlayerReferences()
+    {
+        playerMovement = FindObjectOfType<PlayerMovement>();
+        if (playerMovement != null)
+        {
+            playerLook = playerMovement.GetComponent<PlayerLook>();
+            characterController = playerMovement.GetComponent<CharacterController>();
+        }
     }
 
     private void SetPlayerControl(bool state)
@@ -360,9 +369,9 @@ public class DeathUI : MonoBehaviour
 
     private void SetUIElementsActive(bool state)
     {
+        if (endTitleText != null) endTitleText.gameObject.SetActive(state);
         if (replayButton != null) replayButton.gameObject.SetActive(state);
         if (menuButton != null) menuButton.gameObject.SetActive(state);
         if (quitButton != null) quitButton.gameObject.SetActive(state);
-        if (endTitleText != null) endTitleText.gameObject.SetActive(state);
     }
 }

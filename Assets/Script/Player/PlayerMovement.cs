@@ -1,6 +1,3 @@
-using Cinemachine.Utility;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -9,7 +6,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private CharacterController characterController;
 
     [SerializeField] private float speed = 10f;
-    [SerializeField] private float gravity = -9.8f;//- de roi 
+    [SerializeField] private float gravity = -9.8f;
     [SerializeField] private float jumpHeight = 3f;
 
     [SerializeField] private Transform groundCheck;
@@ -30,35 +27,34 @@ public class PlayerMovement : MonoBehaviour
 
     private void Start()
     {
-        //get component
         playerInput = GetComponent<PlayerInput>();
         animator = GetComponentInChildren<Animator>();
-        //get actions and enable
         move = playerInput.actions["move"];
         jump = playerInput.actions["jump"];
         move.Enable();
         jump.Enable();
     }
-    // Update is called once per frame
+
     void Update()
     {
-        //check ground  
+        // Ground check
         isGrounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);
         animator.SetBool("isGrounded", isGrounded);
-        if (isGrounded && velocity.y < 0)//if player touched ground and is dropping
+        if (isGrounded && velocity.y < 0)
         {
-            velocity.y = -2f;//set sau 1 ti de phu hop voi map ko phang
+            velocity.y = -2f; // Small downward force for uneven terrain
         }
-        //set move forward-back-right-left
+
+        // Movement input
         Vector2 input = move.ReadValue<Vector2>();
         float x = input.x;
-        float z = input.y;//z to forward and use y input
-        //move
+        float z = input.y;
         Vector3 movePlayer = transform.right * x + transform.forward * z;
         characterController.Move(movePlayer * speed * Time.deltaTime);
-        //Anm move
-        float speedVelocity = characterController.velocity.magnitude;//get real velocoty
-        float speedPercent = speedVelocity / speed;//get percent velocity
+
+        // Animation
+        float speedVelocity = characterController.velocity.magnitude;
+        float speedPercent = speedVelocity / speed;
         animator.SetFloat("Speed", speedPercent);
 
         // Footstep sounds
@@ -79,21 +75,20 @@ public class PlayerMovement : MonoBehaviour
             footstepTimer = footstepInterval; // Reset so next step sounds immediately
         }
 
-        //if player is on ground ->jump
-        // Use Input System jump action instead of legacy Input.GetKeyDown
+        // Jump
         if (jump.WasPressedThisFrame() && isGrounded)
         {
-            // Apply jump using physics formula v = sqrt(2 * g * h)
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
         }
-        //roi xuong
+
+        // Apply gravity
         velocity.y += gravity * Time.deltaTime;
         characterController.Move(velocity * Time.deltaTime);
     }
-    //anm attack
+
+    /// <summary>Triggers the attack animation.</summary>
     public void Attack()
     {
         animator.SetTrigger("Hit");
-    }    
-    
+    }
 }

@@ -40,7 +40,7 @@ public class DialogueUI : MonoBehaviour
 
     private void Start()
     {
-        // Tim nguoi choi trong scene
+        // Find player in scene
         playerMovement = FindObjectOfType<PlayerMovement>();
         if (playerMovement != null)
         {
@@ -58,11 +58,13 @@ public class DialogueUI : MonoBehaviour
         }
     }
 
+    /// <summary>Returns whether the dialogue panel is currently active.</summary>
     public bool IsDialogueActive()
     {
         return dialoguePanel != null && dialoguePanel.activeSelf;
     }
 
+    /// <summary>Starts a dialogue sequence with the given speaker and sentences.</summary>
     public void StartDialogue(string speakerName, string[] sentencesList, Action onComplete = null)
     {
         if (dialoguePanel == null) return;
@@ -80,13 +82,14 @@ public class DialogueUI : MonoBehaviour
             speakerNameText.text = speakerName;
         }
 
-        // Vo hieu hoa dieu khien cua player va mo khoa chuot
+        // Disable player controls and unlock cursor
         SetPlayerControl(false);
 
         dialoguePanel.SetActive(true);
         DisplayNextSentence();
     }
 
+    /// <summary>Displays the next sentence or finishes typing the current one.</summary>
     public void DisplayNextSentence()
     {
         if (AudioManager.Instance != null)
@@ -96,7 +99,7 @@ public class DialogueUI : MonoBehaviour
 
         if (isTyping)
         {
-            // Neu dang cuon chu ma bam Next -> hien thi ngay lap tuc ca cau
+            // If typing, show full sentence immediately
             StopAllCoroutines();
             dialogueText.text = currentSentence;
             isTyping = false;
@@ -134,10 +137,10 @@ public class DialogueUI : MonoBehaviour
             dialoguePanel.SetActive(false);
         }
 
-        // Bat lai dieu khien cua player
+        // Re-enable player controls
         SetPlayerControl(true);
 
-        // Goi callback khi hoan thanh
+        // Invoke completion callback
         onDialogueEndCallback?.Invoke();
     }
 

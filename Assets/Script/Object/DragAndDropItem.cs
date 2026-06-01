@@ -1,16 +1,14 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.InputSystem.Controls;
-//implement 3 drag handler and 1 click handler
+
+// Implements drag/drop and right-click equip handlers
 public class DragAndDropItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler
 {
-    [SerializeField] private Canvas canvas;//scale when drag
-    [SerializeField] private RectTransform rectTransform;//transform for UI
-    [SerializeField] private CanvasGroup canvasGroup;//used for opacity and on/off raycast
-    [SerializeField] private Transform dragLayer;//always show on top
-    public static GameObject itemIsDragging;//static allow other scripts know this
+    [SerializeField] private Canvas canvas;
+    [SerializeField] private RectTransform rectTransform;
+    [SerializeField] private CanvasGroup canvasGroup;
+    [SerializeField] private Transform dragLayer;
+    public static GameObject itemIsDragging;
 
     private Vector2 originPos;
     private Transform originSlot;
@@ -22,10 +20,11 @@ public class DragAndDropItem : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         rectTransform = GetComponent<RectTransform>();
         canvasGroup = GetComponent<CanvasGroup>();
         inventoryItem = GetComponent<InventoryItem>();
-        //find dragLayer(top ui layer) in scene
+        // Find the top UI layer for dragging
         dragLayer = GameObject.Find("dragLayer")?.transform;
     }
-    //func call equip func if m2 click
+
+    /// <summary>Equips the item on right-click.</summary>
     public void OnPointerClick(PointerEventData eventData)
     {
         if (eventData.button == PointerEventData.InputButton.Right)
@@ -44,29 +43,34 @@ public class DragAndDropItem : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         }
     }
 
+    /// <summary>Begins dragging the item.</summary>
     public void OnBeginDrag(PointerEventData eventData)
     {
-        canvasGroup.alpha = 0.5f;//opacity = 50%
-        canvasGroup.blocksRaycasts = false;//ko chan raycast->lay ray toi slot o layer sau
-        //save origin pos and slot
+        canvasGroup.alpha = 0.5f;
+        canvasGroup.blocksRaycasts = false;
+        // Save original position and parent slot
         originPos = rectTransform.anchoredPosition;
         originSlot = transform.parent;
 
-        transform.SetParent(dragLayer, true);//dua len dragLayer(top) de ko bi che
-        itemIsDragging = gameObject;//danh dau item is dragging
+        // Move to drag layer so it renders on top
+        transform.SetParent(dragLayer, true);
+        itemIsDragging = gameObject;
     }
-    public void OnDrag(PointerEventData eventData)//PointerEventData la all action cua mouse
+
+    /// <summary>Moves the item with the mouse during drag.</summary>
+    public void OnDrag(PointerEventData eventData)
     {
-        rectTransform.anchoredPosition += eventData.delta/canvas.scaleFactor;//anchoredPos work with UI, eventData.delta :do di chuyen chuot
+        rectTransform.anchoredPosition += eventData.delta / canvas.scaleFactor;
     }
+
+    /// <summary>Ends the drag and snaps back if not dropped on a valid slot.</summary>
     public void OnEndDrag(PointerEventData eventData)
     {
         itemIsDragging = null;
 
-        //if parent is dragLayer
+        // Return to original slot if still on drag layer
         if (transform.parent == dragLayer)
         {
-            //return back pos
             transform.SetParent(originSlot, false);
             rectTransform.anchoredPosition = originPos;
         }

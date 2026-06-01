@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -9,7 +7,7 @@ public class DeerAI : MonoBehaviour
     [SerializeField] private Transform player;
 
     [SerializeField] private float detectRange = 10f;
-    [SerializeField] private float fleeDistance = 15f; // Khoang cach chay tron
+    [SerializeField] private float fleeDistance = 15f;
     [SerializeField] private float wanderRadius = 5f;
     [SerializeField] private float wanderTimer = 4f;
 
@@ -23,7 +21,7 @@ public class DeerAI : MonoBehaviour
         timer = wanderTimer;
         norSpeed = agent.speed;
 
-        // Neu chua gan player tu inspector thi tu tim
+        // Auto-find player if not assigned
         if (player == null)
         {
             GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
@@ -37,10 +35,10 @@ public class DeerAI : MonoBehaviour
 
         float distance = Vector3.Distance(transform.position, player.position);
 
-        if (distance <= detectRange) 
+        if (distance <= detectRange)
         {
-            // CHAY TRON
-            agent.speed = norSpeed * 1.5f; // Huou chay nhanh hon binh thuong
+            // Flee from player
+            agent.speed = norSpeed * 1.5f;
 
             Vector3 dirToPlayer = transform.position - player.position;
             Vector3 fleePos = transform.position + dirToPlayer.normalized * fleeDistance;
@@ -52,17 +50,17 @@ public class DeerAI : MonoBehaviour
             }
             else
             {
-                // Neu ko tim duoc diem chay tron, cu chay thang theo huong nguoc lai
+                // Fallback: flee in opposite direction
                 agent.SetDestination(fleePos);
             }
         }
         else
         {
-            // WANDER (Di dao)
+            // Wander mode
             agent.speed = norSpeed;
             timer += Time.deltaTime;
 
-            if(timer >= wanderTimer)
+            if (timer >= wanderTimer)
             {
                 Vector3 newPos = RandomNavSphere(transform.position, wanderRadius, -1);
                 agent.SetDestination(newPos);
@@ -70,7 +68,7 @@ public class DeerAI : MonoBehaviour
             }
         }
 
-        // Animator
+        // Update animation
         if (anm != null)
         {
             float speedPercent = agent.velocity.magnitude / (norSpeed * 1.5f);
@@ -78,6 +76,7 @@ public class DeerAI : MonoBehaviour
         }
     }
 
+    /// <summary>Returns a random position on the NavMesh within the given radius.</summary>
     public static Vector3 RandomNavSphere(Vector3 pos, float radius, int layerMask)
     {
         Vector3 randomDirection = Random.insideUnitSphere * radius;

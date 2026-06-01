@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -31,7 +30,7 @@ public class GuideUI : MonoBehaviour
     {
         if (guidePanel != null)
         {
-            guidePanel.SetActive(false); // Hide by default
+            guidePanel.SetActive(false);
         }
 
         if (nextButton != null)
@@ -52,6 +51,7 @@ public class GuideUI : MonoBehaviour
 
     public System.Action OnClose;
 
+    /// <summary>Opens the guide panel and shows the first slide.</summary>
     public void OpenGuide()
     {
         if (slides == null || slides.Count == 0)
@@ -69,6 +69,7 @@ public class GuideUI : MonoBehaviour
         ShowPage(currentIndex);
     }
 
+    /// <summary>Closes the guide panel.</summary>
     public void CloseGuide()
     {
         if (AudioManager.Instance != null) AudioManager.Instance.PlayClick();
@@ -86,13 +87,11 @@ public class GuideUI : MonoBehaviour
         currentIndex = index;
         GuideSlide currentSlide = slides[currentIndex];
 
-        // Update Text
         if (guideText != null)
         {
             guideText.text = currentSlide.description;
         }
 
-        // Update Image
         if (guideImage != null)
         {
             if (currentSlide.image != null)
@@ -102,11 +101,10 @@ public class GuideUI : MonoBehaviour
             }
             else
             {
-                guideImage.gameObject.SetActive(false); // Hide image if null
+                guideImage.gameObject.SetActive(false);
             }
         }
 
-        // Update button states
         if (prevButton != null)
         {
             prevButton.interactable = (currentIndex > 0);
@@ -118,6 +116,7 @@ public class GuideUI : MonoBehaviour
         }
     }
 
+    /// <summary>Navigates to the next slide.</summary>
     public void NextPage()
     {
         if (AudioManager.Instance != null) AudioManager.Instance.PlayClick();
@@ -127,6 +126,7 @@ public class GuideUI : MonoBehaviour
         }
     }
 
+    /// <summary>Navigates to the previous slide.</summary>
     public void PreviousPage()
     {
         if (AudioManager.Instance != null) AudioManager.Instance.PlayClick();

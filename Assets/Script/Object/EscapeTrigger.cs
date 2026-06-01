@@ -3,40 +3,39 @@ using UnityEngine.SceneManagement;
 
 public class EscapeTrigger : MonoBehaviour
 {
-    //func detect player
     private void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Player"))
         {
-            //if quest is completed -> load end scene
+            // Only allow escape if quest is completed
             if (QuestManager.Instance != null && QuestManager.Instance.currentState == QuestState.Completed)
             {
                 Debug.Log("Player entered escape trigger! Loading EndScene...");
-                
-                // Mo khoa chuot lai
+
+                // Unlock cursor
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
 
-                // Xoa file save khi da thoat dao thanh cong
+                // Delete save file on successful escape
                 if (SaveLoadManager.Instance != null)
                 {
                     SaveLoadManager.Instance.DeleteSave();
                 }
 
-                // Trigger Victory Screen on DeathUI
+                // Trigger victory screen
                 if (DeathUI.Instance != null)
                 {
                     DeathUI.Instance.TriggerVictoryScreen();
                 }
                 else
                 {
-                    Debug.LogError("[EscapeTrigger] Khong tim thay DeathUI.Instance de hien thi Victory Panel! Chuyen ve MainMenu.");
+                    Debug.LogError("[EscapeTrigger] DeathUI.Instance not found for Victory Panel! Returning to MainMenu.");
                     SceneManager.LoadScene("MainMenu");
                 }
             }
             else
             {
-                Debug.Log("Nhiem vu chua hoan thanh. Chua the thoat khoi dao!");
+                Debug.Log("Quest not completed yet. Cannot escape the island!");
             }
         }
     }

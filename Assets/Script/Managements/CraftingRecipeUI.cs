@@ -1,82 +1,77 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-
 public class CraftingRecipeUI : MonoBehaviour
 {
-    [Header("Recipe Data")]//header = heading
-    [SerializeField] private BluePrint bluePrint; // cong thuc crafting
+    [Header("Recipe Data")]
+    [SerializeField] private BluePrint bluePrint;
 
     [Header("Material Slots")]
-    [SerializeField] private List<MaterialSlotUI> materialSlots; // cac o material
+    [SerializeField] private List<MaterialSlotUI> materialSlots;
 
     [Header("Product")]
-    [SerializeField] private CanvasGroup productCanvasGroup; // set alpha product slot
-    [SerializeField] private Button productButton; // nut bam craft product
+    [SerializeField] private CanvasGroup productCanvasGroup;
+    [SerializeField] private Button productButton;
 
     private void Start()
     {
-        // Gan su kien click product
+        // Bind product click event
         if (productButton != null)
         {
             productButton.onClick.AddListener(OnProductClicked);
         }
 
-        // Lang nghe thay doi inventory de cap nhat UI
+        // Listen for inventory changes to update UI
         if (InventoryManager.Instance != null)
         {
             InventoryManager.Instance.OnInventoryChanged += UpdateUI;
         }
 
-        // Cap nhat UI lan dau
         UpdateUI();
     }
 
     private void OnDestroy()
     {
-        // Huy event khi bi destroy
+        // Unsubscribe event on destroy
         if (InventoryManager.Instance != null)
         {
             InventoryManager.Instance.OnInventoryChanged -= UpdateUI;
         }
     }
 
-    /// Cap nhat toan bo UI cua recipe row nay
+    /// <summary>Updates the entire recipe row UI.</summary>
     public void UpdateUI()
     {
         if (bluePrint == null || InventoryManager.Instance == null) return;
 
         bool canCraft = true;
 
-        // Cap nhat tung material slot
+        // Update each material slot
         for (int i = 0; i < bluePrint.materials.Count; i++)
         {
-            //check tung slot material
             if (i >= materialSlots.Count) break;
-            //get material amount da co
+
             MaterialRequirement requirement = bluePrint.materials[i];
             int currentCount = InventoryManager.Instance.GetItemCount(requirement.item.itemName);
 
-            // Cap nhat text so luong va mau
+            // Update quantity text and color
             materialSlots[i].UpdateQuantity(currentCount, requirement.quantity);
 
-            // Kiem tra du so luong chua
             if (currentCount < requirement.quantity)
             {
                 canCraft = false;
             }
         }
 
-        // Cap nhat alpha cho tat ca material slots trong row
+        // Update alpha for all material slots in this row
         float alpha = canCraft ? 1f : 0.5f;
         foreach (MaterialSlotUI slot in materialSlots)
         {
             slot.SetAlpha(alpha);
         }
 
-        // Cap nhat product
+        // Update product slot
         if (productCanvasGroup != null)
         {
             productCanvasGroup.alpha = alpha;
@@ -87,12 +82,11 @@ public class CraftingRecipeUI : MonoBehaviour
         }
     }
 
-    /// Khi nguoi choi click vao product (collect)
     private void OnProductClicked()
     {
         if (bluePrint == null || InventoryManager.Instance == null) return;
 
-        //check amount
+        // Check material amounts
         foreach (MaterialRequirement requirement in bluePrint.materials)
         {
             int currentCount = InventoryManager.Instance.GetItemCount(requirement.item.itemName);
@@ -103,20 +97,20 @@ public class CraftingRecipeUI : MonoBehaviour
             }
         }
 
-        //amount enough -> check fullslot
+        // Check if inventory is full
         if (InventoryManager.Instance.CheckFullSlot())
         {
             Debug.LogWarning("Inventory is full! Cannot craft: " + bluePrint.blueprintName);
             return;
         }
 
-        // has slot -> call removed func
+        // Remove required materials
         foreach (MaterialRequirement requirement in bluePrint.materials)
         {
             InventoryManager.Instance.RemoveItem(requirement.item.itemName, requirement.quantity);
         }
 
-        // add product
+        // Add crafted product
         InventoryManager.Instance.addItem(bluePrint.resultItem);
 
         if (AudioManager.Instance != null)

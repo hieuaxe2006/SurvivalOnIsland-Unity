@@ -8,11 +8,11 @@ public class InventoryManager : MonoBehaviour
 {
     public static InventoryManager Instance;
 
-    [SerializeField] private GameObject inventoryBG;
+    [SerializeField] private GameObject inventoryBG; // Inventory UI panel
     private bool isOpenInventory;
-    //create list to save slots
-    [SerializeField] private List<GameObject> slotList = new List<GameObject>();
-    [SerializeField] private List<ItemData> allItems;
+
+    [SerializeField] private List<GameObject> slotList = new List<GameObject>(); // List of slot GameObjects
+    [SerializeField] private List<ItemData> allItems; // Database of all ItemData ScriptableObjects
 
     [SerializeField] private GameObject itemToAdd;
     [SerializeField] private GameObject slotWillContainItem;
@@ -20,12 +20,12 @@ public class InventoryManager : MonoBehaviour
     private InputAction inventoryAction;
     private PlayerInput playerInput;
 
-    // Event thong bao khi inventory thay doi (cho crafting UI cap nhat)
-    public System.Action OnInventoryChanged;
-    //singleton
+    public System.Action OnInventoryChanged; // Event triggered whenever the inventory changes
+
     private void Awake()
     {
-        if(Instance != null && Instance != this)
+        // Singleton pattern setup
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
         }
@@ -34,39 +34,63 @@ public class InventoryManager : MonoBehaviour
             Instance = this;
         }
     }
-    // Start is called before the first frame update
-    void Start()
+
+    private void Start()
     {
-        //get playerinput
+        // Set up and enable the new input system action for inventory toggle
         playerInput = GetComponent<PlayerInput>();
         inventoryAction = playerInput.actions["inventoryToggle"];
         inventoryAction.Enable();
 
-        //tat inventory luc dau
+        // Close inventory initially
         isOpenInventory = false;
         inventoryBG.SetActive(isOpenInventory);
 
-        InputSlotList();//get slot begin
+        InputSlotList();
     }
+
+    // Gathers all slots inside inventoryBG, filtering out crafting-related slots
     public void InputSlotList()
     {
-        slotList.Clear();//clear old list
-        //get new list
-        SlotGetItem[] slots = inventoryBG.GetComponentsInChildren<SlotGetItem>();
+        slotList.Clear();
+        SlotGetItem[] slots = inventoryBG.GetComponentsInChildren<SlotGetItem>(true); // Get slots including inactive ones
 
-        foreach (SlotGetItem slot in slots)//loop all slot
+        foreach (SlotGetItem slot in slots)
         {
+            // Skip slots that belong to the crafting/recipe panel to prevent errors during inventory clear
+            if (IsCraftingSlot(slot.transform))
+            {
+                continue;
+            }
             slotList.Add(slot.gameObject);
         }
     }
-    // Update is called once per frame
-    void Update()
+
+    // Helper to check if a UI slot belongs to any crafting panel in the hierarchy
+    private bool IsCraftingSlot(Transform t)
     {
-        if (inventoryAction.triggered)//triggered = getkeydown(is set = tab in unity)
+        Transform current = t;
+        while (current != null && current != inventoryBG.transform)
         {
-            isOpenInventory = !isOpenInventory;//hoan doi active
-            inventoryBG.SetActive(isOpenInventory);//T/F follow isOpenInventory
-            //set mouse
+            string nameLower = current.name.ToLower();
+            if (nameLower.Contains("craft") || nameLower.Contains("recipe") || nameLower.Contains("material") || nameLower.Contains("product"))
+            {
+                return true;
+            }
+            current = current.parent;
+        }
+        return false;
+    }
+
+    private void Update()
+    {
+        // Toggle inventory UI when active key is pressed
+        if (inventoryAction.triggered)
+        {
+            isOpenInventory = !isOpenInventory;
+            inventoryBG.SetActive(isOpenInventory);
+
+            // Handle cursor states on inventory toggle
             if (isOpenInventory)
             {
                 Cursor.lockState = CursorLockMode.None;
@@ -79,28 +103,24 @@ public class InventoryManager : MonoBehaviour
             }
         }
     }
-    //func add item
+
+    // Add an item to the inventory (handles stacking and new slots)
     public void addItem(ItemData itemData, int amount = 1)
     {
-        // Try to find an existing stack of the same item that is not full
+        // 1. Try to find an existing stack of the same item that is not full
         foreach (GameObject slot in slotList)
         {
-            if (slot.transform.childCount > 0)//if slot has item
+            if (slot.transform.childCount > 0)
             {
-                //choose this slot
                 InventoryItem itemInSlot = slot.transform.GetChild(0).GetComponent<InventoryItem>();
-                //if same item and not full
                 if (itemInSlot != null && itemInSlot.itemData == itemData && itemInSlot.amount < itemData.maxStack)
                 {
-                    //check space left
                     int spaceLeft = itemData.maxStack - itemInSlot.amount;
-                    // tinh so luong cho phep add vao slot nay(max space left or amount)
                     int toAdd = Mathf.Min(amount, spaceLeft);
-                    //add vao stack
+                    
                     itemInSlot.AddAmount(toAdd);
-                    //reduce amount
                     amount -= toAdd;
-                    //if amount = 0 , exit loop
+
                     if (amount <= 0)
                     {
                         OnInventoryChanged?.Invoke();
@@ -110,35 +130,35 @@ public class InventoryManager : MonoBehaviour
             }
         }
 
-        // if still have amount, new stack
+        // 2. Create new item stacks if slot space is available
         while (amount > 0)
         {
-            slotWillContainItem = FindEmptySlot();//call func find empty slot
-            if (slotWillContainItem == null)//if no empty slot
+            slotWillContainItem = FindEmptySlot();
+            if (slotWillContainItem == null)
             {
                 Debug.LogWarning("No empty slot available for remaining items: " + itemData.itemName);
-                break;//exit loop
+                break;
             }
-            //load item prefab
+
+            // Load UI slot prefab dynamically from Resources folder
             GameObject prefab = Resources.Load<GameObject>(itemData.itemName);
             if (prefab == null)
             {
-                Debug.LogError("Failed to load item from Resources: " + itemData.itemName);
-                break;//exit loop
+                Debug.LogError("Failed to load item UI prefab from Resources: " + itemData.itemName);
+                break;
             }
-            //add item to slot
+
             itemToAdd = Instantiate(prefab, slotWillContainItem.transform);
-            itemToAdd.name = itemData.itemName; // Keep clean name(not clone number)
-            //add inventory item component
+            itemToAdd.name = itemData.itemName; // Keep clean name
+
             InventoryItem invItem = itemToAdd.GetComponent<InventoryItem>();
             if (invItem == null) invItem = itemToAdd.AddComponent<InventoryItem>();
-            //tinh so luong cho phep add
+
             int toAdd = Mathf.Min(amount, itemData.maxStack);
-            //init item
             invItem.Initialize(itemData, toAdd);
-            //giam so luong
             amount -= toAdd;
-            //set size, pos for item
+
+            // Reset anchored position to center within the slot
             RectTransform rt = itemToAdd.GetComponent<RectTransform>();
             rt.anchoredPosition = Vector2.zero;
             itemToAdd.transform.localScale = Vector3.one;
@@ -147,12 +167,12 @@ public class InventoryManager : MonoBehaviour
         OnInventoryChanged?.Invoke();
     }
 
+    // Find the first empty slot
     public GameObject FindEmptySlot()
     {
-        //find slot have 0 child(empty)
-        foreach(GameObject slot in slotList)
+        foreach (GameObject slot in slotList)
         {
-            if(slot.transform.childCount == 0)
+            if (slot.transform.childCount == 0)
             {
                 return slot;
             }
@@ -160,40 +180,66 @@ public class InventoryManager : MonoBehaviour
         return null;
     }
 
+    // Check if the inventory slots are fully packed
     public bool CheckFullSlot()
     {
+        if (slotList.Count == 0)
+        {
+            // Auto nạp lại slot để phòng tránh lỗi nạp dữ liệu rỗng
+            InputSlotList();
+            if (slotList.Count == 0)
+            {
+                Debug.LogWarning("[InventoryManager] slotList is still empty! Allowing collection to prevent gameplay blocking.");
+                return false;
+            }
+        }
+
         foreach (GameObject slot in slotList)
         {
-            //if find empty slot -> return false (not full)
-            if(slot.transform.childCount == 0)
+            if (slot != null && slot.transform.childCount == 0)
             {
                 return false;
-            } 
+            }
         }
         return true;
     }
 
+    // Fetch ItemData scriptable object by name (with safe Resources fallbacks)
     public ItemData GetItemDataByName(string itemName)
     {
-        foreach (ItemData item in allItems)
+        // 1. Search inside the Inspector serialized list
+        if (allItems != null)
         {
-            if (item.itemName == itemName)
-                return item;
+            foreach (ItemData item in allItems)
+            {
+                if (item != null && item.itemName == itemName)
+                    return item;
+            }
         }
+
+        // 2. Resources fallbacks if not found in list
+        ItemData loadedItem = Resources.Load<ItemData>(itemName);
+        if (loadedItem != null) return loadedItem;
+
+        loadedItem = Resources.Load<ItemData>("Data/" + itemName);
+        if (loadedItem != null) return loadedItem;
+
+        loadedItem = Resources.Load<ItemData>("Items/" + itemName);
+        if (loadedItem != null) return loadedItem;
+
         return null;
     }
 
+    // Get the total quantity of a specific item inside the inventory
     public int GetItemCount(string itemName)
     {
         int count = 0;
-        foreach(GameObject slot in slotList)
+        foreach (GameObject slot in slotList)
         {
-            //if slot have item
-            if(slot.transform.childCount > 0)
+            if (slot.transform.childCount > 0)
             {
-                //get item count
                 InventoryItem item = slot.transform.GetChild(0).GetComponent<InventoryItem>();
-                if(item != null && item.itemData.itemName == itemName)
+                if (item != null && item.itemData.itemName == itemName)
                 {
                     count += item.amount;
                 }
@@ -202,10 +248,10 @@ public class InventoryManager : MonoBehaviour
         return count;
     }
 
+    // Remove a quantity of an item from the inventory (searches slots backwards)
     public bool RemoveItem(string itemName, int count)
     {
         int toRemove = count;
-        // Search from last slot to first (usually better for usage)
         for (int i = slotList.Count - 1; i >= 0; i--)
         {
             GameObject slot = slotList[i];
@@ -224,7 +270,7 @@ public class InventoryManager : MonoBehaviour
                     else
                     {
                         toRemove -= item.amount;
-                        item.amount = 0; // Fix loi dem sai so luong
+                        item.amount = 0;
                         Destroy(slot.transform.GetChild(0).gameObject);
                     }
                 }
@@ -243,6 +289,7 @@ public class InventoryManager : MonoBehaviour
         return slotList;
     }
 
+    // Clear all inventory slots
     public void ClearInventory()
     {
         foreach (GameObject slot in slotList)
@@ -257,5 +304,26 @@ public class InventoryManager : MonoBehaviour
         }
         OnInventoryChanged?.Invoke();
     }
-}
 
+#if UNITY_EDITOR
+    // Automatically find and populate all ItemData assets in the project when working in the Unity Editor
+    private void OnValidate()
+    {
+        string[] guids = UnityEditor.AssetDatabase.FindAssets("t:ItemData");
+        if (guids != null && guids.Length > 0)
+        {
+            allItems = new List<ItemData>();
+            foreach (string guid in guids)
+            {
+                string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+                ItemData item = UnityEditor.AssetDatabase.LoadAssetAtPath<ItemData>(path);
+                if (item != null && !allItems.Contains(item))
+                {
+                    allItems.Add(item);
+                }
+            }
+            UnityEditor.EditorUtility.SetDirty(this);
+        }
+    }
+#endif
+}

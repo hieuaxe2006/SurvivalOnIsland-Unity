@@ -1,13 +1,11 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class EquipManager : MonoBehaviour
 {
     public static EquipManager Instance;
 
-    [SerializeField] private Transform handSlot; // Bone tay phai cua player model
-    
+    [SerializeField] private Transform handSlot; // Player right-hand bone
+
     public ItemData currentEquipped { get; private set; }
     private GameObject currentModel;
 
@@ -23,70 +21,67 @@ public class EquipManager : MonoBehaviour
         }
     }
 
+    /// <summary>Equips an item, or unequips if already holding the same item.</summary>
     public void Equip(ItemData item)
     {
-        // Neu dang cam cung 1 item thi Unequip
+        // If already holding the same item, unequip it
         if (currentEquipped == item)
         {
             Unequip();
             return;
         }
 
-        // Destroy model cu
+        // Destroy previous model
         Unequip();
-        //debug
+
         if (item.prefab3D == null)
         {
             Debug.LogWarning("Item " + item.itemName + " does not have a prefab3D for equipping.");
             return;
         }
-        if(item.itemName == "AirplanePart")
+        if (item.itemName == "AirplanePart")
         {
-            Debug.Log("Item" + item.itemName + " cant be equiped");
+            Debug.Log("Item " + item.itemName + " can't be equipped.");
             return;
         }
 
-        // Instantiate model moi vao tay
+        // Instantiate new model in hand
         currentModel = Instantiate(item.prefab3D, handSlot);
-        //get value from each item
         currentModel.transform.localPosition = item.equipPos;
         currentModel.transform.localRotation = Quaternion.Euler(item.equipRot);
-        
-        // --- FIX BUG NHẶT ĐỒ TỪ TRÊN TAY ---
-        // Vô hiệu hóa script InteractableObject và Collider để tia Raycast (tâm ngắm) 
-        // không tự bắn trúng đồ vật đang cầm trên tay.
+
+        // Disable interaction on held item so raycast doesn't hit it
         InteractableObject interactObj = currentModel.GetComponent<InteractableObject>();
         if (interactObj != null) Destroy(interactObj);
 
         Collider[] colliders = currentModel.GetComponentsInChildren<Collider>();
-        foreach(Collider col in colliders)
+        foreach (Collider col in colliders)
         {
             col.enabled = false;
         }
-        // ------------------------------------
 
         currentEquipped = item;
         Debug.Log("Equipped: " + item.itemName);
-        
-        // Co the kich hoat animation o day
     }
 
+    /// <summary>Unequips the currently held item.</summary>
     public void Unequip()
     {
         if (currentModel != null)
         {
-            Destroy(currentModel);//xoa item dang equip
+            Destroy(currentModel);
         }
         currentEquipped = null;
         currentModel = null;
     }
 
+    /// <summary>Returns the damage value of the currently equipped weapon.</summary>
     public int GetCurrentWeaponDamage()
     {
         if (currentEquipped != null)
         {
             return currentEquipped.damage;
         }
-        return 0; 
+        return 0;
     }
 }

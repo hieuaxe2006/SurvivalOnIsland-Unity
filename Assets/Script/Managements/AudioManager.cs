@@ -25,6 +25,7 @@ public class AudioManager : MonoBehaviour
 
     private void Awake()
     {
+        // Singleton pattern to keep AudioManager alive across scenes
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -34,7 +35,7 @@ public class AudioManager : MonoBehaviour
             Instance = this;
             DontDestroyOnLoad(gameObject);
 
-            // Tự động thêm AudioSource ngay trong Awake để tránh lỗi cảnh load trước Start
+            // Add AudioSources automatically if not pre-assigned
             if (musicSource == null)
             {
                 musicSource = gameObject.AddComponent<AudioSource>();
@@ -54,7 +55,7 @@ public class AudioManager : MonoBehaviour
 
     private void Start()
     {
-        // Phát nhạc cho scene hiện tại khi bắt đầu
+        // Play scene BGM on start
         PlaySceneMusic(SceneManager.GetActiveScene().name);
     }
 
@@ -73,6 +74,7 @@ public class AudioManager : MonoBehaviour
         PlaySceneMusic(scene.name);
     }
 
+    // Handles playing ambient and music tracks depending on active scene name
     private void PlaySceneMusic(string sceneName)
     {
         if (sceneName == "MainMenu")
@@ -92,14 +94,14 @@ public class AudioManager : MonoBehaviour
         }
     }
 
-    // Phát âm thanh 2D (như UI, nhặt đồ)
+    // Plays a 2D sound effect (e.g. UI clicks, item collection)
     public void PlaySFX(AudioClip clip, float volume = 1f)
     {
         if (clip == null) return;
         musicSource.PlayOneShot(clip, volume);
     }
 
-    // Phát âm thanh 3D định hướng (như chém cây, đánh quái)
+    // Plays a directional 3D sound effect (e.g. tree chop, hitting monsters)
     public void PlaySFX3D(AudioClip clip, Vector3 position, float volume = 1f)
     {
         if (clip == null) return;
@@ -108,7 +110,7 @@ public class AudioManager : MonoBehaviour
         AudioSource aSource = tempGO.AddComponent<AudioSource>();
         aSource.clip = clip;
         aSource.volume = volume;
-        aSource.spatialBlend = 1f; // Chuyển sang chế độ 3D
+        aSource.spatialBlend = 1f; // 3D spatial sound
         aSource.minDistance = 2f;
         aSource.maxDistance = 20f;
         aSource.rolloffMode = AudioRolloffMode.Linear;
@@ -118,7 +120,7 @@ public class AudioManager : MonoBehaviour
 
     public void PlayMusic(AudioClip clip, bool loop = true)
     {
-        if (musicSource.clip == clip) return; // Nếu đang chạy đúng bài rồi thì không phát lại
+        if (musicSource.clip == clip) return; // Skip if already playing
 
         musicSource.clip = clip;
         musicSource.loop = loop;
@@ -158,7 +160,7 @@ public class AudioManager : MonoBehaviour
         ambientSource.Stop();
     }
 
-    // Các hàm helper tiện lợi để gọi từ các script khác
+    // Convenient shortcut helpers for quick SFX invocation
     public void PlayClick() => PlaySFX(sfxClick, 0.8f);
     public void PlayCollect() => PlaySFX(sfxCollect, 0.9f);
     public void PlayAttack() => PlaySFX(sfxAttack, 0.7f);

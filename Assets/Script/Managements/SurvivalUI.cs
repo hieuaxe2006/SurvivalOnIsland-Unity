@@ -10,10 +10,9 @@ public class SurvivalUI : MonoBehaviour
 
     private void Start()
     {
-        // Đảm bảo các ảnh UI được gán trong Inspector
-        if (healthBarImage == null) Debug.LogWarning("[SurvivalUI] Thiếu tham chiếu healthBarImage!", this);
-        if (hungerBarImage == null) Debug.LogWarning("[SurvivalUI] Thiếu tham chiếu hungerBarImage!", this);
-        if (thirstBarImage == null) Debug.LogWarning("[SurvivalUI] Thiếu tham chiếu thirstBarImage!", this);
+        if (healthBarImage == null) Debug.LogWarning("[SurvivalUI] Missing healthBarImage reference!", this);
+        if (hungerBarImage == null) Debug.LogWarning("[SurvivalUI] Missing hungerBarImage reference!", this);
+        if (thirstBarImage == null) Debug.LogWarning("[SurvivalUI] Missing thirstBarImage reference!", this);
     }
 
     private void Update()

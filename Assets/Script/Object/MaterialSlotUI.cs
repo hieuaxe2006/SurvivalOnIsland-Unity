@@ -1,21 +1,16 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 using TMPro;
 
 public class MaterialSlotUI : MonoBehaviour
 {
-    [SerializeField] private TMP_Text quantityText; // text hien thi amount item need
-    [SerializeField] private CanvasGroup canvasGroup; // de chinh alpha
+    [SerializeField] private TMP_Text quantityText;
+    [SerializeField] private CanvasGroup canvasGroup;
 
-    /// Cap nhat text so luong va mau sac
+    /// <summary>Updates quantity text and color (green if sufficient, red if not).</summary>
     public void UpdateQuantity(int currentAmount, int requiredAmount)
     {
-        // Hien thi "current/required"
         quantityText.text = currentAmount + "/" + requiredAmount;
 
-        // Doi mau: xanh neu du, do neu thieu
         if (currentAmount >= requiredAmount)
         {
             quantityText.color = Color.green;
@@ -25,7 +20,8 @@ public class MaterialSlotUI : MonoBehaviour
             quantityText.color = Color.red;
         }
     }
-    /// Chinh do mo cua o material
+
+    /// <summary>Sets the opacity of this material slot.</summary>
     public void SetAlpha(float alpha)
     {
         if (canvasGroup != null)

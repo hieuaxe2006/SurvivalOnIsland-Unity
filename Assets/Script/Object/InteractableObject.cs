@@ -6,21 +6,21 @@ public enum InteractType { Collectable, Harvestable, InfoOnly }
 
 public class InteractableObject : MonoBehaviour
 {
-    public bool isInRange;
-    public ItemData itemData;
-    public InteractType interactType = InteractType.Collectable;
+    public bool isInRange; // True when player is inside the interaction trigger zone
+    public ItemData itemData; // The item data ScriptableObject associated with this object
+    public InteractType interactType = InteractType.Collectable; // Interaction mode (Collectable, Harvestable, InfoOnly)
 
     [Header("Harvesting Settings (if Harvestable)")]
-    public int maxHits = 3;
-    public int dropAmount = 2;
+    public int maxHits = 3; // Number of hits required to harvest this object
+    public int dropAmount = 2; // Quantity of items to drop upon harvesting completion
     private int currentHits = 0;
 
-
+    // Get the clean display name of the object
     public string GetObjectName()
     {
         if (itemData != null)
             return itemData.itemName;
-        return gameObject.name;//fallback neu chua gan itemData hoac la cay (Harvestable/InfoOnly)
+        return gameObject.name; // Fallback to GameObject name if no ItemData assigned
     }
 
     public int GetCurrentHits()
@@ -28,20 +28,20 @@ public class InteractableObject : MonoBehaviour
         return currentHits;
     }
 
+    // Apply hit damage to harvestable objects (e.g. chopping trees or mining rocks)
     public void TakeHit(int damage)
     {
-        if (interactType != InteractType.Harvestable) return;//if click to unharvestable -> none
+        if (interactType != InteractType.Harvestable) return;
 
         if (damage > 0)
         {
             currentHits += damage;
-            Debug.Log(GetObjectName() + " bi danh sat thuong " + damage + ". Tong: " + currentHits + "/" + maxHits);
+            Debug.Log($"{GetObjectName()} hit for {damage} damage. Progress: {currentHits}/{maxHits}");
 
             if (AudioManager.Instance != null)
             {
                 AudioManager.Instance.PlayHit3D(transform.position);
             }
-
 
             if (currentHits >= maxHits)
             {
@@ -50,39 +50,40 @@ public class InteractableObject : MonoBehaviour
         }
         else
         {
-            Debug.Log("Ban can cam Axe hoac Tool phu hop de chat/dap " + GetObjectName());
+            Debug.Log("You need an Axe or an appropriate tool to harvest " + GetObjectName());
         }
     }
 
+    // Instantiates dropped items randomly on the ground and destroys this object
     private void Harvest()
     {
         if (itemData != null && itemData.prefab3D != null && dropAmount > 0)
         {
             for (int i = 0; i < dropAmount; i++)
             {
-                // Spawn random xung quanh
+                // Calculate random offset to scatter items
                 Vector3 randomOffset = new Vector3(Random.Range(-1.5f, 1.5f), 0f, Random.Range(-1.5f, 1.5f));
                 Vector3 spawnPos = transform.position + randomOffset;
-                // detect on terrain high and low
+
+                // Adjust Y height to match the Terrain mesh
                 if (Terrain.activeTerrain != null)
                 {
                     float terrainHeight = Terrain.activeTerrain.SampleHeight(spawnPos) + Terrain.activeTerrain.transform.position.y;
-                    spawnPos.y = terrainHeight + 0.1f; //avoid under ground
+                    spawnPos.y = terrainHeight + 0.1f;
                 }
                 else
                 {
-                    // second way use ray to ground
+                    // Fallback using ground raycast if no Terrain found
                     Vector3 rayStart = spawnPos;
-                    rayStart.y += 10f; // ray on top 10m
+                    rayStart.y += 10f;
 
-                    // use layermask to skip trigger or player 
                     if (Physics.Raycast(rayStart, Vector3.down, out RaycastHit hit, 20f))
                     {
                         spawnPos.y = hit.point.y + 0.1f;
                     }
                     else
                     {
-                        spawnPos.y = transform.position.y + 0.5f; //last check if no touch anything
+                        spawnPos.y = transform.position.y + 0.5f;
                     }
                 }
                 Instantiate(itemData.prefab3D, spawnPos, Quaternion.identity);
@@ -90,19 +91,27 @@ public class InteractableObject : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning(GetObjectName() + " khong co ItemData hoac prefab3D de drop!");
+            Debug.LogWarning(GetObjectName() + " is missing ItemData or prefab3D to drop items!");
         }
-        Debug.Log("Khai thac xong " + GetObjectName());
+
+        Debug.Log("Harvesting completed for " + GetObjectName());
+
+        // Save harvested position state so it does not spawn again when loaded
+        string itemID = $"collected_{gameObject.name}_{transform.position.x:F2}_{transform.position.y:F2}_{transform.position.z:F2}";
+        PlayerPrefs.SetInt(itemID, 1);
+        PlayerPrefs.Save();
+
         Destroy(gameObject);
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if(other.CompareTag("Player"))
+        if (other.CompareTag("Player"))
         {
             isInRange = true;
         }
     }
+
     private void OnTriggerExit(Collider other)
     {
         if (other.CompareTag("Player"))

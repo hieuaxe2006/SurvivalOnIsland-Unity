@@ -1,7 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 using TMPro;
 
 public class InventoryItem : MonoBehaviour
@@ -9,7 +6,8 @@ public class InventoryItem : MonoBehaviour
     public ItemData itemData;
     public int amount;
     public TMP_Text amountText;
-    //init data
+
+    /// <summary>Initializes the item with data and amount.</summary>
     public void Initialize(ItemData data, int initialAmount)
     {
         itemData = data;
@@ -17,24 +15,26 @@ public class InventoryItem : MonoBehaviour
         RefreshUI();
     }
 
+    /// <summary>Adds to the current stack amount.</summary>
     public void AddAmount(int value)
     {
         amount += value;
         RefreshUI();
     }
 
+    /// <summary>Updates the amount text display.</summary>
     public void RefreshUI()
     {
         if (amountText != null)
         {
             if (amount > 1)
             {
-                amountText.text = amount.ToString();//show amount if > 1
+                amountText.text = amount.ToString();
                 amountText.gameObject.SetActive(true);
             }
             else
             {
-                amountText.gameObject.SetActive(false);//hide amount if = 1
+                amountText.gameObject.SetActive(false);
             }
         }
     }

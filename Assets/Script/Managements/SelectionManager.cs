@@ -8,38 +8,44 @@ using UnityEngine.InputSystem;
 
 public class SelectionManager : MonoBehaviour
 {
-    public static SelectionManager instance;//change to singleton for more accessable
+    public static SelectionManager instance; // Singleton instance
 
-    [SerializeField] private GameObject infoUI;
+    [SerializeField] private GameObject infoUI; // Name display panel GameObject
     private TMP_Text infoText;
-    [Header("Cooldown")]
-    [SerializeField] private float atackRate = 1f;//cooldown
+
+    [Header("Cooldown Settings")]
+    [SerializeField] private float atackRate = 1f; // Weapon/Attack cooldown rate
     private float nextAttack = 0f;
 
     [Header("Hold E Settings")]
-    [SerializeField] private float AirplanePartHoldTime = 15f;
+    [SerializeField] private float AirplanePartHoldTime = 15f; // Time in seconds to hold E for AirplanePart
     private float holdETimer = 0f;
     private InteractableObject lastHeldObject;
+    private float lookAwayTimer = 0f; // Look-away grace period timer
+    private float lookAwayGracePeriod = 0.5f; // Grace period buffer to prevent instant resets due to camera sway
 
-    private InteractableObject ObjectScriptedCurrent;
+    private InteractableObject ObjectScriptedCurrent; // Currently highlighted interactable object
     private PlayerMovement playerMovement;
+
     private void Awake()
     {
-        if(instance != null && instance != this)
+        // Singleton pattern setup
+        if (instance != null && instance != this)
         {
             Destroy(gameObject);
         }
-        else instance = this;
+        else
+        {
+            instance = this;
+        }
     }
-    // Start is called before the first frame update
-    void Start()
+
+    private void Start()
     {
-        //get component
         infoText = infoUI.GetComponent<TMP_Text>();
         playerMovement = FindObjectOfType<PlayerMovement>();
 
-        // Tự động tắt Raycast Target trên InfoPanel và các đối tượng con của nó
-        // để tránh việc bảng hiển thị tên chặn các cú click chuột vào hòm đồ/UI phía sau
+        // Disable raycast target on all elements of the Info Panel to prevent blocking clicks
         if (infoUI != null)
         {
             var graphics = infoUI.GetComponentsInChildren<UnityEngine.UI.Graphic>(true);
@@ -50,34 +56,34 @@ public class SelectionManager : MonoBehaviour
         }
     }
 
-    // Update is called once per frame
-    void Update()
+    private void Update()
     {
-        // Kiem tra xem co dang trong hoi thoai ko
+        // Don't interact or raycast if dialogue is currently active
         if (DialogueUI.Instance != null && DialogueUI.Instance.IsDialogueActive())
         {
             if (infoUI != null) infoUI.SetActive(false);
             return;
         }
 
-        //tao raycast
+        // Raycast from camera center to aim at interactable objects
         Vector3 mousePos = Mouse.current != null ? (Vector3)Mouse.current.position.ReadValue() : Vector3.zero;
-        Ray ray = Camera.main.ScreenPointToRay(mousePos);//lay ray tu screen -> mouse position
-        //tim object co collider
+        Ray ray = Camera.main.ScreenPointToRay(mousePos);
         RaycastHit hit;
-        if (Physics.Raycast(ray, out hit))//if hit something
+
+        if (Physics.Raycast(ray, out hit))
         {
-            var selectionTransform = hit.transform;//save its transform
-            InteractableObject scriptInteract = selectionTransform.GetComponent<InteractableObject>();//script interact
-            //check co script va in range ko
+            var selectionTransform = hit.transform;
+            InteractableObject scriptInteract = selectionTransform.GetComponent<InteractableObject>();
+
+            // If object is interactable and player is within trigger range
             if (scriptInteract && scriptInteract.isInRange)
             {
-                ObjectScriptedCurrent = scriptInteract;//avoid bug collect all object has this script
+                ObjectScriptedCurrent = scriptInteract;
                 string objName = scriptInteract.GetObjectName();
-                if(objName != null)
+                if (objName != null)
                 {
-                    infoText.text = objName;//get name object to show
-                    infoUI.SetActive(true);//show
+                    infoText.text = objName;
+                    infoUI.SetActive(true); // Display name overlay
                 }
                 else
                 {
@@ -86,137 +92,103 @@ public class SelectionManager : MonoBehaviour
             }
             else
             {
-                ObjectScriptedCurrent = null;//ko nhat
-                infoUI.SetActive(false);//if no script no show
+                ObjectScriptedCurrent = null;
+                infoUI.SetActive(false);
             }
         }
         else
         {
-            ObjectScriptedCurrent = null;//ko cho nhat
-            infoUI.SetActive(false);// avoid bug from scripted object -> no hitted object(T->NG)  
+            ObjectScriptedCurrent = null;
+            infoUI.SetActive(false);
         }
 
-        // xu ly chuot trai de chat cay, danh quai, dat lua trai, eat | Cooldown
+        // Left Click: Handles attacking, harvesting, and consuming
         bool isLeftClick = Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame;
         if (isLeftClick && Time.time > nextAttack && (UnityEngine.EventSystems.EventSystem.current == null || !UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject()))
         {
             ItemData currentTool = (EquipManager.Instance != null) ? EquipManager.Instance.currentEquipped : null;
 
-            // Eat - no delay hit
+            // 1. Consume Food/Placeables
             if (currentTool != null && currentTool.itemType == ItemType.Food)
             {
-                //if equip force meat
                 Animator anim = playerMovement.GetComponentInChildren<Animator>();  
                 if (anim != null)
                 {
-                    anim.SetTrigger("Eat"); //set anm
+                    anim.SetTrigger("Eat");
                 }
-                else
-                {
-                    Debug.LogWarning("Không tìm thấy Animator trên Player hoặc các object con của Player.");
-                }
+
                 SurvivalStats.Instance.Consume(currentTool);
                 InventoryManager.Instance.RemoveItem(currentTool.itemName, 1);
 
-                if (AudioManager.Instance != null)
-                {
-                    AudioManager.Instance.PlayClick();
-                }
+                if (AudioManager.Instance != null) AudioManager.Instance.PlayClick();
 
-                // if last item so unequip
                 if (InventoryManager.Instance.GetItemCount(currentTool.itemName) <= 0)
                 {
                     EquipManager.Instance.Unequip();
                 }
                 
-                nextAttack = Time.time + atackRate; // cooldown
+                nextAttack = Time.time + atackRate;
                 return;
             }
 
-            // Campfire | placeable item
+            // 2. Place Placeable Prefabs (e.g. Campfire)
             if (currentTool != null && currentTool.itemType == ItemType.Placeable)
             {
-                // Raycast to ground (max 100m to ensure aim to ground)
                 if (Physics.Raycast(ray, out RaycastHit groundHit, 100f)) 
                 {
-                    // Kiem tra khoang cach tu nguoi choi toi diem dat (toi da 5m)
                     float distanceToPlayer = Vector3.Distance(playerMovement.transform.position, groundHit.point);
-                    if (distanceToPlayer <= 5f)
+                    if (distanceToPlayer <= 5f) // Max placing distance is 5m
                     {
                         if (currentTool.prefab3D != null)
                         {
                             Instantiate(currentTool.prefab3D, groundHit.point, Quaternion.identity);
                             InventoryManager.Instance.RemoveItem(currentTool.itemName, 1);
 
-
-                            //if last item
                             if (InventoryManager.Instance.GetItemCount(currentTool.itemName) <= 0)
                             {
                                 EquipManager.Instance.Unequip();
                             }
-                            Debug.Log("Da dat thanh cong " + currentTool.itemName);
-                        }
-                        else
-                        {
-                            Debug.LogWarning("Chua gan Prefab 3D cho " + currentTool.itemName + " trong ItemData!");
                         }
                     }
-                    else
-                    {
-                        Debug.Log("Vi tri qua xa de dat! (" + System.Math.Round(distanceToPlayer, 1) + "m)");
-                    }
-                    nextAttack = Time.time + atackRate;//cooldown
-                }
-                else
-                {
-                    Debug.Log("Khong the dat o day (Raycast tu Camera khong cham dat).");
+                    nextAttack = Time.time + atackRate;
                 }
                 return;
             }
 
-            // Atack
+            // 3. Regular Attack Animation and Sound
             playerMovement.Attack();
-            if (AudioManager.Instance != null)
-            {
-                AudioManager.Instance.PlayAttack();
-            }
-            nextAttack = Time.time + atackRate;//cooldown
+            if (AudioManager.Instance != null) AudioManager.Instance.PlayAttack();
+            nextAttack = Time.time + atackRate;
             
-            // setting damage
+            // Calculate tool/weapon damage values
             int treeDamage = 0;
-            float enemyDamage = 1f; // fist default
+            float enemyDamage = 1f;
 
             if (currentTool != null)
             {
                 enemyDamage = currentTool.damage > 0 ? (float)currentTool.damage : 1f;
                 treeDamage = currentTool.treeDamage;
 
-                // Legacy fallback if damage/treeDamage is not set in ItemData asset
+                // Fallbacks for default tools
                 if (currentTool.damage == 0)
                 {
-                    if (currentTool.itemName == "Stone" || currentTool.itemName == "Wood")
-                        enemyDamage = 2f;
-                    else if (currentTool.itemName == "Axe")
-                        enemyDamage = 3f;
-                    else if (currentTool.itemName == "Sword")
-                        enemyDamage = 5f;
+                    if (currentTool.itemName == "Stone" || currentTool.itemName == "Wood") enemyDamage = 2f;
+                    else if (currentTool.itemName == "Axe") enemyDamage = 3f;
+                    else if (currentTool.itemName == "Sword") enemyDamage = 5f;
                 }
 
                 if (currentTool.treeDamage == 0)
                 {
-                    if (currentTool.itemName == "Stone" || currentTool.itemName == "Wood")
-                        treeDamage = 1;
-                    else if (currentTool.itemName == "Axe")
-                        treeDamage = 2;
+                    if (currentTool.itemName == "Stone" || currentTool.itemName == "Wood") treeDamage = 1;
+                    else if (currentTool.itemName == "Axe") treeDamage = 2;
                 }
             }
 
-            // Chat cay (Harvestable)
+            // 4. Attack Harvestable Objects (Trees, Rocks)
             if (ObjectScriptedCurrent != null && ObjectScriptedCurrent.interactType == InteractType.Harvestable)
             {
                 ObjectScriptedCurrent.TakeHit(treeDamage);
 
-                // Hiển thị HP mục tiêu trên HUD
                 if (NotificationUI.Instance != null)
                 {
                     float currentHP = ObjectScriptedCurrent.maxHits - ObjectScriptedCurrent.GetCurrentHits();
@@ -224,27 +196,22 @@ public class SelectionManager : MonoBehaviour
                 }
             }
 
-            // Attack enemies (using raycast hit and distance check)
+            // 5. Attack Enemies within 10m range
             if (hit.collider != null)
             {
                 EnemyHealth enemy = hit.collider.GetComponent<EnemyHealth>();
                 if (enemy != null)
                 {                             
-                    // Kiem tra khoang cach de tranh viec danh quai tu qua xa
                     float distanceToEnemy = Vector3.Distance(playerMovement.transform.position, hit.collider.transform.position);
                     if (distanceToEnemy <= 10f)
                     {
                         enemy.TakeHit(enemyDamage);
                     }
-                    else
-                    {
-                        Debug.Log("Quai vat o qua xa de tan cong! (" + System.Math.Round(distanceToEnemy, 1) + "m)");
-                    }
                 }
             }
         }
 
-        // Collect item
+        // E Key Press / Hold interactions
         bool isEPressed = Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame;
         bool isEHeld = Keyboard.current != null && Keyboard.current.eKey.isPressed;
 
@@ -253,9 +220,10 @@ public class SelectionManager : MonoBehaviour
             if (ObjectScriptedCurrent.interactType != InteractType.InfoOnly && ObjectScriptedCurrent.interactType != InteractType.Harvestable)
             {
                 ItemData itemData = ObjectScriptedCurrent.itemData;
+                
+                // AirplanePart requires holding E
                 if (itemData != null && itemData.itemName == "AirplanePart")
                 {
-                    // Logic Giữ E cho AirplanePart (Động cơ máy bay)
                     if (isEHeld)
                     {
                         if (lastHeldObject != ObjectScriptedCurrent)
@@ -264,6 +232,7 @@ public class SelectionManager : MonoBehaviour
                             lastHeldObject = ObjectScriptedCurrent;
                         }
 
+                        lookAwayTimer = 0f; // Reset grace period while looking at target
                         holdETimer += Time.deltaTime;
                         float progress = holdETimer / AirplanePartHoldTime;
 
@@ -272,55 +241,70 @@ public class SelectionManager : MonoBehaviour
                             NotificationUI.Instance.UpdateProgressNotification($"Salvaging Engine... {Mathf.RoundToInt(progress * 100f)}%");
                         }
 
-                        // Phát tiếng click nhỏ báo hiệu tiến trình tháo gỡ cơ khí (mỗi 0.5s)
+                        // Play ticking click sound every 0.5s of progress
                         if (Mathf.FloorToInt(holdETimer * 2f) != Mathf.FloorToInt((holdETimer - Time.deltaTime) * 2f))
                         {
                             if (AudioManager.Instance != null) AudioManager.Instance.PlayClick();
                         }
 
+                        // Completed holds
                         if (holdETimer >= AirplanePartHoldTime)
                         {
                             CollectItem(ObjectScriptedCurrent);
                             holdETimer = 0f;
                             lastHeldObject = null;
+                            lookAwayTimer = 0f;
                         }
                     }
                     else
                     {
-                        // Thả E giữa chừng -> reset
+                        // Release E resets immediately
                         if (holdETimer > 0f)
                         {
-                            holdETimer = 0f;
-                            lastHeldObject = null;
-                            if (NotificationUI.Instance != null)
-                            {
-                                NotificationUI.Instance.ShowNotification("Salvaging interrupted!");
-                            }
+                            ResetHoldProgress("Salvaging interrupted!");
                         }
                     }
                 }
                 else if (isEPressed)
                 {
-                    // Nhặt tức thời cho các vật phẩm thường khác
+                    // Regular items are picked up instantly on press
                     CollectItem(ObjectScriptedCurrent);
                 }
             }
         }
         else
         {
-            // Nhìn đi chỗ khác -> reset tiến trình
-            if (holdETimer > 0f)
+            // Grace period look-away logic when still holding E
+            if (lastHeldObject != null && isEHeld)
             {
-                holdETimer = 0f;
-                lastHeldObject = null;
-                if (NotificationUI.Instance != null)
+                lookAwayTimer += Time.deltaTime;
+                if (lookAwayTimer >= lookAwayGracePeriod)
                 {
-                    NotificationUI.Instance.ShowNotification("Salvaging interrupted!");
+                    ResetHoldProgress("Salvaging interrupted!");
+                }
+            }
+            else
+            {
+                if (holdETimer > 0f)
+                {
+                    ResetHoldProgress("Salvaging interrupted!");
                 }
             }
         }
     }
 
+    private void ResetHoldProgress(string message)
+    {
+        holdETimer = 0f;
+        lastHeldObject = null;
+        lookAwayTimer = 0f;
+        if (NotificationUI.Instance != null)
+        {
+            NotificationUI.Instance.ShowNotification(message);
+        }
+    }
+
+    // Handles picking up items and adding them to the inventory
     private void CollectItem(InteractableObject obj)
     {
         if (obj == null) return;
@@ -333,6 +317,11 @@ public class SelectionManager : MonoBehaviour
 
         if (!InventoryManager.Instance.CheckFullSlot())
         {
+            // Save destruction coordinates state so it does not spawn again when loaded
+            string itemID = $"collected_{obj.gameObject.name}_{obj.transform.position.x:F2}_{obj.transform.position.y:F2}_{obj.transform.position.z:F2}";
+            PlayerPrefs.SetInt(itemID, 1);
+            PlayerPrefs.Save();
+
             Destroy(obj.gameObject);
             if (obj == ObjectScriptedCurrent)
             {
@@ -350,8 +339,6 @@ public class SelectionManager : MonoBehaviour
             {
                 AudioManager.Instance.PlayCollect();
             }
-
-            Debug.Log("Collected new item: " + itemData.itemName);
         }
         else
         {
@@ -359,7 +346,6 @@ public class SelectionManager : MonoBehaviour
             {
                 NotificationUI.Instance.ShowNotification("Inventory is full!");
             }
-            Debug.Log("Inventory is full!");
         }
     }
 }

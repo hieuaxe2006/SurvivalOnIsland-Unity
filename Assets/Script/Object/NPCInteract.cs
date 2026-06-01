@@ -7,16 +7,16 @@ public class NPCInteract : MonoBehaviour
     public string npcName = "Pilot";
     
     [Header("Quest Item Settings")]
-    [SerializeField] private ItemData airplanePartItem; // Keo tha ItemData cua AirplanePart vao day de NPC tang 1 cai free
+    [SerializeField] private ItemData airplanePartItem; // Drop here the AirplanePart ItemData asset so the NPC can give 1 free part on quest start
 
     [Header("UI Prompt")]
-    [SerializeField] private GameObject promptUI; // GameObject hien "Nhan E de tro chuyen" (tuy chon)
+    [SerializeField] private GameObject promptUI; // UI GameObject showing "Press E to talk"
 
     private bool isInRange = false;
 
     private void Update()
     {
-        // Neu player dang trong tam va nhan phim E, dong thoi khong dang trong hoi thoai
+        // Check if the player is in range, presses E, and dialogue is not already running
         bool isEPressed = Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame;
         if (isInRange && isEPressed)
         {
@@ -31,11 +31,11 @@ public class NPCInteract : MonoBehaviour
     {
         if (QuestManager.Instance == null)
         {
-            Debug.LogError("QuestManager chua duoc khoi tao!");
+            Debug.LogError("QuestManager not found!");
             return;
         }
 
-        // An prompt UI khi bat dau tro chuyen
+        // Hide talk prompt UI when conversation starts
         if (promptUI != null) promptUI.SetActive(false);
 
         if (QuestManager.Instance.currentState == QuestState.NotStarted)
@@ -52,36 +52,35 @@ public class NPCInteract : MonoBehaviour
             {
                 QuestManager.Instance.StartQuest();
                 
-                // NPC tang 1 linh kien free truc tiep vao inventory
+                // NPC awards player 1 free part instantly into the inventory
                 if (airplanePartItem != null && InventoryManager.Instance != null)
                 {
                     InventoryManager.Instance.addItem(airplanePartItem);
-                    Debug.Log("NPC Pilot give you first part" + airplanePartItem.itemName);
+                    Debug.Log("NPC Pilot gave player the first AirplanePart.");
                 }
                 else
                 {
-                    Debug.LogWarning("Chua gan airplanePartItem hoac thieu InventoryManager!");
+                    Debug.LogWarning("Missing airplanePartItem or InventoryManager reference!");
                 }
                 
-                // Hien lai prompt UI neu player van o trong tam
+                // Show talk prompt UI again if player is still within range
                 if (isInRange && promptUI != null) promptUI.SetActive(true);
             });
         }
         else if (QuestManager.Instance.currentState == QuestState.InProgress)
         {
-            // Kiem tra xem co du 5 linh kien trong inventory chua
+            // Check if player has collected all 5 parts inside their inventory
             if (QuestManager.Instance.partsCollected >= QuestManager.Instance.totalParts)
             {
                 string[] finishSentences = new string[]
                 {
                     "Excellent! You’ve found all 5 plane parts!",
                     "Let me repair the engine. Get inside the plane cabin — we can leave this island right now!"
-    
                 };
 
                 DialogueUI.Instance.StartDialogue(npcName, finishSentences, () =>
                 {
-                    QuestManager.Instance.CompleteQuest(); // Tang completed, xoa 5 linh kien, bat escape trigger
+                    QuestManager.Instance.CompleteQuest(); // Mark complete, consume items, unlock cabin trigger
                     if (isInRange && promptUI != null) promptUI.SetActive(true);
                 });
             }
@@ -105,7 +104,7 @@ public class NPCInteract : MonoBehaviour
         {
             string[] afterFinishSentences = new string[]
             {
-                "Engine has been worked! Go inside plane"
+                "Engine is working! Go inside the plane cabin!"
             };
 
             DialogueUI.Instance.StartDialogue(npcName, afterFinishSentences, () =>

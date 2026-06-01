@@ -29,12 +29,11 @@ public class MainMenuUI : MonoBehaviour
     [SerializeField] private VideoPlayer introVideoPlayer;
     [SerializeField] private RawImage videoOutputImage;
 
-
     private void Start()
     {
         CheckAndFixEventSystem();
 
-        // Kiem tra truc tiep trong PlayerPrefs xem co ban save hay khong
+        // Check if a valid save exists to toggle the Continue button
         bool hasSave = PlayerPrefs.GetInt("save_exists", 0) == 1;
 
         if (continueButton != null)
@@ -71,22 +70,21 @@ public class MainMenuUI : MonoBehaviour
 
         if (menuButtonsPanel != null)
         {
-            menuButtonsPanel.SetActive(true); // Show menu panel at start
+            menuButtonsPanel.SetActive(true); // Show menu buttons at start
         }
 
         if (videoOutputImage != null)
         {
-            videoOutputImage.gameObject.SetActive(false); // Hide video image at start
+            videoOutputImage.gameObject.SetActive(false); // Hide raw image at start
         }
 
-        // Đảm bảo video intro không tự chạy đè lên menu
         if (introVideoPlayer != null)
         {
             introVideoPlayer.playOnAwake = false;
             introVideoPlayer.Stop();
         }
 
-        // Đảm bảo chuột hiển thị và tự do ở Main Menu
+        // Unlock mouse cursor for Main Menu navigation
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
     }
@@ -105,11 +103,11 @@ public class MainMenuUI : MonoBehaviour
         Debug.Log("[MainMenuUI] Starting a new game...");
         SaveLoadManager.shouldLoadSave = false;
         
-        // Xoa ban save cu de tranh xung dot
+        // Wipe old save data to prevent collision
         PlayerPrefs.DeleteAll();
         PlayerPrefs.Save();
 
-        // Neu co video thi phat video truoc, sau do load game
+        // Play intro video first if assigned
         if (introVideoPlayer != null && videoOutputImage != null)
         {
             StartCoroutine(PlayIntroThenLoad());
@@ -140,28 +138,24 @@ public class MainMenuUI : MonoBehaviour
         Application.Quit();
     }
 
+    // Handles async scene loading with a loading progress bar
     private IEnumerator LoadGameplayAsync()
     {
-        // Hide button panel
         if (menuButtonsPanel != null)
         {
             menuButtonsPanel.SetActive(false);
         }
 
-        // Show loading panel
         if (loadingPanel != null)
         {
             loadingPanel.SetActive(true);
         }
 
-        // Start loading scene asynchronously
         AsyncOperation asyncLoad = SceneManager.LoadSceneAsync("GamePlay");
         
-        // Do not let scene switch until loading is at 90% (or let it switch automatically)
-        // Here we just let it load naturally and track progress
         while (!asyncLoad.isDone)
         {
-            // progress is from 0 to 0.9. Normalize it to 0 to 1
+            // Normalize progress range from 0 - 0.9 to 0 - 1.0
             float progress = Mathf.Clamp01(asyncLoad.progress / 0.9f);
             
             if (loadingBarFill != null)
@@ -178,6 +172,7 @@ public class MainMenuUI : MonoBehaviour
         }
     }
 
+    // Plays the PlaneCrash video clip, then starts loading the gameplay scene
     private IEnumerator PlayIntroThenLoad()
     {
         if (AudioManager.Instance != null)
@@ -185,19 +180,17 @@ public class MainMenuUI : MonoBehaviour
             AudioManager.Instance.StopMusic();
         }
 
-        // Ẩn menu buttons
         if (menuButtonsPanel != null)
         {
             menuButtonsPanel.SetActive(false);
         }
 
-        // Ẩn loading panel để tránh việc nó che mất video khi phát
         if (loadingPanel != null)
         {
             loadingPanel.SetActive(false);
         }
 
-        // Ẩn background panel để tránh che mất video
+        // Find and hide background panel automatically if not assigned
         if (backgroundPanel == null)
         {
             Transform bgTransform = transform.parent != null ? transform.parent.Find("Background") ?? transform.parent.Find("BackgroundImage") ?? transform.parent.Find("BackgroundPanel") : null;
@@ -215,18 +208,17 @@ public class MainMenuUI : MonoBehaviour
             backgroundPanel.SetActive(false);
         }
 
-        // Chuẩn bị video player trước để tránh màn hình trống hoặc nháy hình
+        // Prepare video to prevent black flickering screens
         introVideoPlayer.Prepare();
         while (!introVideoPlayer.isPrepared)
         {
             yield return null;
         }
 
-        // Hiện video output và phát video
         videoOutputImage.gameObject.SetActive(true);
         introVideoPlayer.Play();
 
-        // Chờ cho đến khi video chạy xong
+        // Wait until video has finished playing
         bool videoFinished = false;
         VideoPlayer.EventHandler onVideoFinished = null;
         onVideoFinished = (vp) => {
@@ -240,7 +232,6 @@ public class MainMenuUI : MonoBehaviour
             yield return null;
         }
 
-        // Ẩn video, hiện loading và bắt đầu load scene
         videoOutputImage.gameObject.SetActive(false);
         yield return StartCoroutine(LoadGameplayAsync());
     }
@@ -255,9 +246,8 @@ public class MainMenuUI : MonoBehaviour
             {
                 Destroy(oldModule);
                 eventSystem.gameObject.AddComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
-                Debug.Log("[MainMenuUI] Replaced StandaloneInputModule with InputSystemUIInputModule on EventSystem.");
+                Debug.Log("[MainMenuUI] EventSystem upgraded to the new InputSystem UI module.");
             }
         }
     }
 }
-

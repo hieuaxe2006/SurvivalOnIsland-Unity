@@ -42,25 +42,25 @@ public class NotificationUI : MonoBehaviour
         }
     }
 
-    // --- DISPLAY HUD NOTIFICATIONS ---
+    /// <summary>Shows a notification message with auto-hide.</summary>
     public void ShowNotification(string message)
     {
         if (infoNotificationText == null) return;
 
-        // Ghi đè ngay lập tức nội dung cũ
+        // Overwrite current message immediately
         infoNotificationText.text = message;
 
-        // Dừng coroutine ẩn cũ nếu đang chạy
+        // Stop previous hide coroutine if running
         if (hideNotificationCoroutine != null)
         {
             StopCoroutine(hideNotificationCoroutine);
         }
 
-        // Bắt đầu đếm ngược ẩn mới
+        // Start new hide countdown
         hideNotificationCoroutine = StartCoroutine(HideNotificationAfterDelay());
     }
 
-    // Cập nhật text liên tục (như khi giữ phím) mà không tạo coroutine mới mỗi frame
+    /// <summary>Updates text continuously (e.g. while holding a key) without spawning new coroutines each frame.</summary>
     public void UpdateProgressNotification(string message)
     {
         if (infoNotificationText == null) return;
@@ -79,21 +79,20 @@ public class NotificationUI : MonoBehaviour
         hideNotificationCoroutine = null;
     }
 
-    // --- DISPLAY TARGET HP / HITS ---
+    /// <summary>Displays target HP info with auto-hide.</summary>
     public void ShowTargetHP(string targetName, float current, float max)
     {
         if (targetHPText == null) return;
 
-        // Định dạng text: "Mục tiêu - HP: Hiện tại/Tối đa"
         targetHPText.text = $"{targetName} - HP: {current}/{max}";
 
-        // Dừng coroutine ẩn cũ nếu đang chạy
+        // Stop previous hide coroutine if running
         if (hideHPCoroutine != null)
         {
             StopCoroutine(hideHPCoroutine);
         }
 
-        // Bắt đầu đếm ngược ẩn mới
+        // Start new hide countdown
         hideHPCoroutine = StartCoroutine(HideHPAfterDelay());
     }
 
