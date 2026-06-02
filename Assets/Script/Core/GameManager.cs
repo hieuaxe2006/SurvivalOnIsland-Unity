@@ -7,7 +7,7 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance { get; private set; }
 
     [Header("UI Pause Menu")]
-    [SerializeField] private GameObject pauseMenuPanel; // Reference to the Pause Panel GameObject
+    [SerializeField] private GameObject pauseMenuPanel;
     
     private bool isPaused = false;
     private PlayerMovement playerMovement;
@@ -15,7 +15,7 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
-        // Keep GameManager alive across all scene transitions
+        // create singleton keep GameManager alive across all scene transitions
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -30,19 +30,20 @@ public class GameManager : MonoBehaviour
     private void Start()
     {
         FindSceneReferences();
-        CheckAndFixEventSystem();
+        CheckAndFixEventSystem();//fix event system to use new input system module to avoid UI click errors
     }
 
     private void Update()
     {
-        // Toggle pause menu with ESC (only in gameplay scene)
+        // Check esc(escape) is pressed
         bool isEscapePressed = Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame;
+        //if pressed esc and in gameplay scene -> pause or resume game
         if (isEscapePressed && SceneManager.GetActiveScene().name == "GamePlay")
         {
-            // Do not pause if player is in dialogue or is dead
+            //no pause if in dialogue or die
             bool isDialogueActive = DialogueUI.Instance != null && DialogueUI.Instance.IsDialogueActive();
             bool isDead = SurvivalStats.Instance != null && SurvivalStats.Instance.IsDead;
-
+            //pause/resume
             if (!isDialogueActive && !isDead)
             {
                 if (isPaused)
@@ -59,15 +60,17 @@ public class GameManager : MonoBehaviour
 
     private void OnEnable()
     {
+        //subscribe to scene load event, run after loaded all
         SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
     private void OnDisable()
     {
+        //remove subscribe to avoid leak memory
         SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
-    // Runs automatically whenever a new scene is loaded
+    // run when scene loaded
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         isPaused = false;
@@ -75,20 +78,22 @@ public class GameManager : MonoBehaviour
         FindSceneReferences();
         CheckAndFixEventSystem();
 
-        // Manage mouse cursor state based on active scene
-        if (scene.name == "MainMenu" || scene.name == "EndScene")
+        // unlock cursor if  in menu
+        if (scene.name == "MainMenu")
         {
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
         }
+        // lock cursor if in gameplay and load save if needed
         else if (scene.name == "GamePlay")
         {
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
 
-            // Defer loading to ensure all game objects are fully initialized first
+            // if have save to load
             if (SaveLoadManager.shouldLoadSave)
             {
+                //load save after 1 frame
                 StartCoroutine(LoadSaveDeferred());
             }
         }
@@ -97,7 +102,7 @@ public class GameManager : MonoBehaviour
     // Wait exactly 1 frame for Awake/Start methods to finish before loading save
     private System.Collections.IEnumerator LoadSaveDeferred()
     {
-        yield return null;
+        yield return null;//wait 1 frame
 
         SaveLoadManager slm = SaveLoadManager.Instance;
         if (slm == null)
@@ -107,6 +112,7 @@ public class GameManager : MonoBehaviour
 
         if (slm != null)
         {
+            // Load the saved game
             slm.LoadGame();
         }
         else
@@ -117,7 +123,7 @@ public class GameManager : MonoBehaviour
         SaveLoadManager.shouldLoadSave = false; // Reset state
     }
 
-    // Automatically locate references in the active scene
+    // auto find object reference in scene
     private void FindSceneReferences()
     {
         playerMovement = FindObjectOfType<PlayerMovement>();
@@ -187,28 +193,28 @@ public class GameManager : MonoBehaviour
     public void PauseGame()
     {
         isPaused = true;
-        Time.timeScale = 0f;
+        Time.timeScale = 0f;//stop time
 
         if (pauseMenuPanel != null)
         {
-            pauseMenuPanel.SetActive(true);
+            pauseMenuPanel.SetActive(true);//show pause menu
         }
 
-        SetPlayerControl(false);
+        SetPlayerControl(false);//stop player
     }
 
     // Resume the game (resumes time and locks cursor)
     public void ResumeGame()
     {
         isPaused = false;
-        Time.timeScale = 1f;
+        Time.timeScale = 1f;//resume time
 
         if (pauseMenuPanel != null)
         {
-            pauseMenuPanel.SetActive(false);
+            pauseMenuPanel.SetActive(false);//hide pause menu
         }
 
-        SetPlayerControl(true);
+        SetPlayerControl(true);//enable player
     }
 
     public void LoadScene(string sceneName)

@@ -24012,6 +24012,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   camFollowPos: {fileID: 183879926}
   mouseSensitivity: 8
+  xRotation: 0
+  yRotation: 0
 --- !u!114 &1839034359
 MonoBehaviour:
   m_ObjectHideFlags: 0

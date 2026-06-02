@@ -64,14 +64,14 @@ public class DialogueUI : MonoBehaviour
         return dialoguePanel != null && dialoguePanel.activeSelf;
     }
 
-    /// <summary>Starts a dialogue sequence with the given speaker and sentences.</summary>
+    //start dialogue
     public void StartDialogue(string speakerName, string[] sentencesList, Action onComplete = null)
     {
         if (dialoguePanel == null) return;
 
         onDialogueEndCallback = onComplete;
         sentences.Clear();
-
+        // Enqueue all sentences
         foreach (string sentence in sentencesList)
         {
             sentences.Enqueue(sentence);
@@ -89,7 +89,7 @@ public class DialogueUI : MonoBehaviour
         DisplayNextSentence();
     }
 
-    /// <summary>Displays the next sentence or finishes typing the current one.</summary>
+    // skip typing effect if click Next
     public void DisplayNextSentence()
     {
         if (AudioManager.Instance != null)
@@ -115,7 +115,7 @@ public class DialogueUI : MonoBehaviour
         currentSentence = sentences.Dequeue();
         StartCoroutine(TypeSentence(currentSentence));
     }
-
+    //handle typing effect
     private IEnumerator TypeSentence(string sentence)
     {
         dialogueText.text = "";
@@ -129,7 +129,7 @@ public class DialogueUI : MonoBehaviour
 
         isTyping = false;
     }
-
+    //end dialogue
     private void EndDialogue()
     {
         if (dialoguePanel != null)
@@ -143,7 +143,7 @@ public class DialogueUI : MonoBehaviour
         // Invoke completion callback
         onDialogueEndCallback?.Invoke();
     }
-
+    //lock character and unlock cursor
     private void SetPlayerControl(bool state)
     {
         if (playerMovement != null)

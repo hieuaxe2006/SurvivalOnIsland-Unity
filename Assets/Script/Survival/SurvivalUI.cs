@@ -17,6 +17,7 @@ public class SurvivalUI : MonoBehaviour
 
     private void Update()
     {
+        //use filled type image with fill amount to show health, hunger, thirst
         if (SurvivalStats.Instance == null) return;
 
         if (healthBarImage != null)

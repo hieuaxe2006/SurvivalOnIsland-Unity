@@ -13,7 +13,7 @@ public class InteractableObject : MonoBehaviour
     [Header("Harvesting Settings (if Harvestable)")]
     public int maxHits = 3; // Number of hits required to harvest this object
     public int dropAmount = 2; // Quantity of items to drop upon harvesting completion
-    private int currentHits = 0;
+    private float currentHits = 0;
 
     // Get the clean display name of the object
     public string GetObjectName()
@@ -23,13 +23,13 @@ public class InteractableObject : MonoBehaviour
         return gameObject.name; // Fallback to GameObject name if no ItemData assigned
     }
 
-    public int GetCurrentHits()
+    public float GetCurrentHits()
     {
         return currentHits;
     }
 
-    // Apply hit damage to harvestable objects (e.g. chopping trees or mining rocks)
-    public void TakeHit(int damage)
+    // handle damage to tree/coconut tree
+    public void TakeHit(float damage)
     {
         if (interactType != InteractType.Harvestable) return;
 
@@ -61,11 +61,11 @@ public class InteractableObject : MonoBehaviour
         {
             for (int i = 0; i < dropAmount; i++)
             {
-                // Calculate random offset to scatter items
+                // random offset around tree
                 Vector3 randomOffset = new Vector3(Random.Range(-1.5f, 1.5f), 0f, Random.Range(-1.5f, 1.5f));
                 Vector3 spawnPos = transform.position + randomOffset;
 
-                // Adjust Y height to match the Terrain mesh
+                // set height to terrain
                 if (Terrain.activeTerrain != null)
                 {
                     float terrainHeight = Terrain.activeTerrain.SampleHeight(spawnPos) + Terrain.activeTerrain.transform.position.y;
@@ -86,6 +86,7 @@ public class InteractableObject : MonoBehaviour
                         spawnPos.y = transform.position.y + 0.5f;
                     }
                 }
+                //create
                 Instantiate(itemData.prefab3D, spawnPos, Quaternion.identity);
             }
         }

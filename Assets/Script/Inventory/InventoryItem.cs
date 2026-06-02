@@ -7,22 +7,20 @@ public class InventoryItem : MonoBehaviour
     public int amount;
     public TMP_Text amountText;
 
-    /// <summary>Initializes the item with data and amount.</summary>
+    // Initializes the inventory item with the given item data and amount, then updates the UI
     public void Initialize(ItemData data, int initialAmount)
     {
         itemData = data;
         amount = initialAmount;
         RefreshUI();
     }
-
-    /// <summary>Adds to the current stack amount.</summary>
+    //add amount to the inventory item and refresh the UI to reflect the new quantity
     public void AddAmount(int value)
     {
         amount += value;
         RefreshUI();
     }
 
-    /// <summary>Updates the amount text display.</summary>
     public void RefreshUI()
     {
         if (amountText != null)
@@ -30,7 +28,7 @@ public class InventoryItem : MonoBehaviour
             if (amount > 1)
             {
                 amountText.text = amount.ToString();
-                amountText.gameObject.SetActive(true);
+                amountText.gameObject.SetActive(true);//show amount if >2 
             }
             else
             {

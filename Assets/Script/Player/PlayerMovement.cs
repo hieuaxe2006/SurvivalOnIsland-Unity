@@ -20,13 +20,14 @@ public class PlayerMovement : MonoBehaviour
     [Header("Footstep Settings")]
     [SerializeField] private float footstepInterval = 0.5f;
     private float footstepTimer = 0f;
-
+    //use player input system for movement and jump
     private PlayerInput playerInput;
     private InputAction move;
     private InputAction jump;
 
     private void Start()
     {
+        //set action and animation
         playerInput = GetComponent<PlayerInput>();
         animator = GetComponentInChildren<Animator>();
         move = playerInput.actions["move"];
@@ -84,11 +85,5 @@ public class PlayerMovement : MonoBehaviour
         // Apply gravity
         velocity.y += gravity * Time.deltaTime;
         characterController.Move(velocity * Time.deltaTime);
-    }
-
-    /// <summary>Triggers the attack animation.</summary>
-    public void Attack()
-    {
-        animator.SetTrigger("Hit");
     }
 }

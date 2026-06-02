@@ -167,5 +167,5 @@ public class AudioManager : MonoBehaviour
     public void PlayHit3D(Vector3 position) => PlaySFX3D(sfxHit, position, 0.8f);
     public void PlayHurt() => PlaySFX(sfxHurt, 0.9f);
     public void PlayDeath3D(Vector3 position) => PlaySFX3D(sfxDeath, position, 1f);
-    public void PlayFootstep() => PlaySFX(sfxFootstep, 0.4f);
+    public void PlayFootstep() => PlaySFX(sfxFootstep, 0.3f);
 }

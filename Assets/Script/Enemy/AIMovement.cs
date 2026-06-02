@@ -66,19 +66,20 @@ public class AIMovement : MonoBehaviour
         if (player == null || isAttacking) return;
 
         float distance = Vector3.Distance(transform.position, player.position);
-
+        //if player in range
         if (distance <= detectRange)
         {
+            //buff speed
             agent.speed = norSpeed * 2;
 
             if (distance <= attackRange && Time.time >= nextAttackTime)
             {
-                nextAttackTime = Time.time + attackCooldown;
-                StartCoroutine(AttackSequence());
+                nextAttackTime = Time.time + attackCooldown;//cooldown
+                StartCoroutine(AttackSequence());//start attack sequence
             }
             else
             {
-                agent.SetDestination(player.position);
+                agent.SetDestination(player.position);//follow player
 
                 // Rotate towards player
                 Vector3 lookPos = player.position - transform.position;

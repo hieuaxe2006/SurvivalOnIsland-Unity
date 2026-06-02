@@ -16,7 +16,7 @@ public class CraftingRecipeUI : MonoBehaviour
 
     private void Start()
     {
-        // Bind product click event
+        // handle product button click
         if (productButton != null)
         {
             productButton.onClick.AddListener(OnProductClicked);
@@ -64,7 +64,7 @@ public class CraftingRecipeUI : MonoBehaviour
             }
         }
 
-        // Update alpha for all material slots in this row
+        // alpha of slots and product button
         float alpha = canCraft ? 1f : 0.5f;
         foreach (MaterialSlotUI slot in materialSlots)
         {

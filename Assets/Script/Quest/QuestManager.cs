@@ -70,7 +70,7 @@ public class QuestManager : MonoBehaviour
         }
     }
 
-    // Complete the quest (removes the AirplaneParts and activates the escape trigger)
+    // complete, remove parts and enable escape trigger
     public void CompleteQuest()
     {
         if (currentState == QuestState.InProgress)

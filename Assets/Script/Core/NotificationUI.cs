@@ -42,7 +42,7 @@ public class NotificationUI : MonoBehaviour
         }
     }
 
-    /// <summary>Shows a notification message with auto-hide.</summary>
+    
     public void ShowNotification(string message)
     {
         if (infoNotificationText == null) return;
@@ -59,8 +59,7 @@ public class NotificationUI : MonoBehaviour
         // Start new hide countdown
         hideNotificationCoroutine = StartCoroutine(HideNotificationAfterDelay());
     }
-
-    /// <summary>Updates text continuously (e.g. while holding a key) without spawning new coroutines each frame.</summary>
+    // Update message immeniately
     public void UpdateProgressNotification(string message)
     {
         if (infoNotificationText == null) return;
@@ -72,6 +71,7 @@ public class NotificationUI : MonoBehaviour
         }
     }
 
+    //hide after delay
     private IEnumerator HideNotificationAfterDelay()
     {
         yield return new WaitForSeconds(notificationDuration);

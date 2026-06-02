@@ -57,7 +57,7 @@ public class InventoryManager : MonoBehaviour
 
         foreach (SlotGetItem slot in slots)
         {
-            // Skip slots that belong to the crafting/recipe panel to prevent errors during inventory clear
+            // Skip slots in crafting
             if (IsCraftingSlot(slot.transform))
             {
                 continue;
@@ -84,13 +84,13 @@ public class InventoryManager : MonoBehaviour
 
     private void Update()
     {
-        // Toggle inventory UI when active key is pressed
+        // Toggle inventory
         if (inventoryAction.triggered)
         {
             isOpenInventory = !isOpenInventory;
             inventoryBG.SetActive(isOpenInventory);
 
-            // Handle cursor states on inventory toggle
+            // Handle cursor 
             if (isOpenInventory)
             {
                 Cursor.lockState = CursorLockMode.None;
@@ -113,6 +113,7 @@ public class InventoryManager : MonoBehaviour
             if (slot.transform.childCount > 0)
             {
                 InventoryItem itemInSlot = slot.transform.GetChild(0).GetComponent<InventoryItem>();
+                //if slot same item and not full
                 if (itemInSlot != null && itemInSlot.itemData == itemData && itemInSlot.amount < itemData.maxStack)
                 {
                     int spaceLeft = itemData.maxStack - itemInSlot.amount;
@@ -306,7 +307,7 @@ public class InventoryManager : MonoBehaviour
     }
 
 #if UNITY_EDITOR
-    // Automatically find and populate all ItemData assets in the project when working in the Unity Editor
+    // Automatically find and populate all ItemData assets
     private void OnValidate()
     {
         string[] guids = UnityEditor.AssetDatabase.FindAssets("t:ItemData");
