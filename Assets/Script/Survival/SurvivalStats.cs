@@ -11,13 +11,13 @@ public class SurvivalStats : MonoBehaviour
     [Header("Hunger")]
     [SerializeField] private float maxHunger = 100f;
     [SerializeField] private float currentHunger = 100f;
-    [Tooltip("Decrease 1% each 3 secs")]
+    [Tooltip("Decrease hunger")]
     [SerializeField] private float hungerDecreaseRate = 0.333f;
 
     [Header("Thirst")]
     [SerializeField] private float maxThirst = 100f;
     [SerializeField] private float currentThirst = 100f;
-    [Tooltip("Decrease 1% each 3 secs")]
+    [Tooltip("Decrease thirst")]
     [SerializeField] private float thirstDecreaseRate = 0.333f;
 
     [Header("Starvation Damage")]

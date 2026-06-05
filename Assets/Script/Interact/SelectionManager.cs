@@ -186,9 +186,9 @@ public class SelectionManager : MonoBehaviour
                 // Fallbacks for default tools
                 if (currentTool.damage == 0)
                 {
-                    if (currentTool.itemName == "Stone" || currentTool.itemName == "Wood") enemyDamage = 1.5f;
-                    else if (currentTool.itemName == "Axe") enemyDamage = 2.5f;
-                    else if (currentTool.itemName == "Sword") enemyDamage = 3.5f;
+                    if (currentTool.itemName == "Stone" || currentTool.itemName == "Wood") enemyDamage = 2f;
+                    else if (currentTool.itemName == "Axe") enemyDamage = 3f;
+                    else if (currentTool.itemName == "Sword") enemyDamage = 4f;
                 }
 
                 if (currentTool.treeDamage == 0)

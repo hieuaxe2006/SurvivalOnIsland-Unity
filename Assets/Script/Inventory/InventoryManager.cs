@@ -107,18 +107,22 @@ public class InventoryManager : MonoBehaviour
     // Add an item to the inventory (handles stacking and new slots)
     public void addItem(ItemData itemData, int amount = 1)
     {
-        // 1. Try to find an existing stack of the same item that is not full
+        // check slot
         foreach (GameObject slot in slotList)
         {
+            //if slot has item
             if (slot.transform.childCount > 0)
             {
+                //check amount and type
                 InventoryItem itemInSlot = slot.transform.GetChild(0).GetComponent<InventoryItem>();
                 //if slot same item and not full
                 if (itemInSlot != null && itemInSlot.itemData == itemData && itemInSlot.amount < itemData.maxStack)
                 {
+                    //get space left
                     int spaceLeft = itemData.maxStack - itemInSlot.amount;
+                    //amount or space left
                     int toAdd = Mathf.Min(amount, spaceLeft);
-                    
+                    //add to slot
                     itemInSlot.AddAmount(toAdd);
                     amount -= toAdd;
 
@@ -131,9 +135,10 @@ public class InventoryManager : MonoBehaviour
             }
         }
 
-        // 2. Create new item stacks if slot space is available
+        // if still has amount left- > new stack
         while (amount > 0)
         {
+            //find new slot
             slotWillContainItem = FindEmptySlot();
             if (slotWillContainItem == null)
             {
@@ -141,22 +146,24 @@ public class InventoryManager : MonoBehaviour
                 break;
             }
 
-            // Load UI slot prefab dynamically from Resources folder
+            // Load UI slot
             GameObject prefab = Resources.Load<GameObject>(itemData.itemName);
             if (prefab == null)
             {
                 Debug.LogError("Failed to load item UI prefab from Resources: " + itemData.itemName);
                 break;
             }
-
+            //create item in slot
             itemToAdd = Instantiate(prefab, slotWillContainItem.transform);
             itemToAdd.name = itemData.itemName; // Keep clean name
-
+            
             InventoryItem invItem = itemToAdd.GetComponent<InventoryItem>();
             if (invItem == null) invItem = itemToAdd.AddComponent<InventoryItem>();
-
+            //amount or max stack
             int toAdd = Mathf.Min(amount, itemData.maxStack);
+            //initialize item
             invItem.Initialize(itemData, toAdd);
+            //add to slot
             amount -= toAdd;
 
             // Reset anchored position to center within the slot

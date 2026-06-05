@@ -89,16 +89,18 @@ public class DeathUI : MonoBehaviour
         }
     }
 
-    // Triggers game over sequence
+    // Gameover
     public void TriggerDeathScreen()
     {
         if (hasTriggeredDeath) return;
         hasTriggeredDeath = true;
-
+        //setting sound
         if (AudioManager.Instance != null)
         {
+            //stop all sound
             AudioManager.Instance.StopAmbient();
             AudioManager.Instance.StopMusic();
+            //play sound death
             AudioManager.Instance.PlaySFX(AudioManager.Instance.sfxDeath);
             AudioManager.Instance.PlayMusic(AudioManager.Instance.bgmGameOver, false);
         }
@@ -109,40 +111,35 @@ public class DeathUI : MonoBehaviour
         {
             hudCanvas.SetActive(false);
         }
-
+        // hide buttons and texts
         SetUIElementsActive(false);
-
+        //show death panel
         if (deathPanel != null)
         {
             deathPanel.SetActive(false);
         }
 
         gameObject.SetActive(true);
+        //start coroutine death
         StartCoroutine(TriggerDeathScreenSequence());
     }
-
+    //handle death sequence
     private IEnumerator TriggerDeathScreenSequence()
     {
-        // Save current death coordinates before respawn calculations
-        if (playerMovement != null)
-        {
-            deathPosition = playerMovement.transform.position;
-        }
-
-        // Lock player controls
+        // Stun player controls
         SetPlayerControl(false);
 
-        // Slow down camera look and player actions
+        // lock player look
         if (playerLook != null)
         {
             playerLook.xRotation = 0f;
             playerLook.yRotation = 0f;
         }
 
-        // Wait 2s for falling down death animation to play out
+        // 2s to animate
         yield return new WaitForSeconds(2.0f);
 
-        // Smoothly fade to a black overlay
+        // Load Black Overlay
         if (fadeOverlay != null)
         {
             fadeOverlay.gameObject.SetActive(true);
@@ -188,7 +185,7 @@ public class DeathUI : MonoBehaviour
         }
     }
 
-    // Triggers victory screen sequence
+    // Victory
     public void TriggerVictoryScreen()
     {
         if (hasTriggeredDeath) return;
@@ -196,37 +193,46 @@ public class DeathUI : MonoBehaviour
 
         if (AudioManager.Instance != null)
         {
+            //stop sound
             AudioManager.Instance.StopAmbient();
+            //play sound victory
             AudioManager.Instance.PlayMusic(AudioManager.Instance.bgmVictory, true);
         }
-
+        //hide buttons and texts
         SetUIElementsActive(false);
         if (deathPanel != null)
         {
             deathPanel.SetActive(false);
         }
-
+        //show victory panel
         gameObject.SetActive(true);
+        //start coroutine victory
         StartCoroutine(TriggerVictoryScreenSequence());
     }
-
+    //handle victory sequence
     private IEnumerator TriggerVictoryScreenSequence()
     {
+        //stop player controls
         SetPlayerControl(false);
 
-        // Play the plane take-off video if assigned
+        // Play video
         if (victoryVideoPlayer != null && victoryVideoOutput != null)
         {
+            //play
             victoryVideoOutput.gameObject.SetActive(true);
             victoryVideoPlayer.Play();
 
-            // Wait until video has finished playing
+            // video finish = false init
             bool videoFinished = false;
+            // register event
             UnityEngine.Video.VideoPlayer.EventHandler onVideoFinished = null;
+            //callback func when end video
             onVideoFinished = (vp) => {
                 videoFinished = true;
+                //cancel event
                 victoryVideoPlayer.loopPointReached -= onVideoFinished;
-            };
+            };  
+            //(loopPointReached when last frame)
             victoryVideoPlayer.loopPointReached += onVideoFinished;
 
             while (!videoFinished)
@@ -292,14 +298,14 @@ public class DeathUI : MonoBehaviour
         }
     }
 
-    // Handles the Respawn logic
+    // Respawn = new play
     public void RespawnPlayer()
     {
         if (AudioManager.Instance != null) AudioManager.Instance.PlayClick();
 
         Time.timeScale = 1f;
 
-        // Wipe old save file because player died
+        // delete save
         if (SaveLoadManager.Instance != null)
         {
             SaveLoadManager.Instance.DeleteSave();
@@ -312,7 +318,7 @@ public class DeathUI : MonoBehaviour
 
         SaveLoadManager.shouldLoadSave = false;
 
-        // Reload the current gameplay scene
+        // Reload scene
         string activeSceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
         UnityEngine.SceneManagement.SceneManager.LoadScene(activeSceneName);
     }
